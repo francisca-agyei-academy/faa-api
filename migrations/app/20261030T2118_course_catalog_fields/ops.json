@@ -1,0 +1,1048 @@
+[
+  {
+    "id": "column.public.Course.audience",
+    "label": "Add column \"audience\" to \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "audience",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"audience\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "audience"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"audience\" on \"Course\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"audience\"",
+        "sql": "ALTER TABLE \"public\".\"Course\" ADD COLUMN \"audience\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"audience\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "audience"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"audience\" on \"Course\""
+        }
+      },
+      {
+        "description": "verify column \"audience\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "audience",
+          "text"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Course.enrollmentOpen",
+    "label": "Add column \"enrollmentOpen\" to \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "enrollmentOpen",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"enrollmentOpen\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "enrollmentOpen"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"enrollmentOpen\" on \"Course\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"enrollmentOpen\"",
+        "sql": "ALTER TABLE \"public\".\"Course\" ADD COLUMN \"enrollmentOpen\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"enrollmentOpen\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "enrollmentOpen"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"enrollmentOpen\" on \"Course\""
+        }
+      },
+      {
+        "description": "verify column \"enrollmentOpen\" has type \"boolean\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "enrollmentOpen",
+          "boolean"
+        ]
+      },
+      {
+        "description": "verify column \"enrollmentOpen\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "enrollmentOpen",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Course.imageKey",
+    "label": "Add column \"imageKey\" to \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "imageKey",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"imageKey\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "imageKey"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"imageKey\" on \"Course\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"imageKey\"",
+        "sql": "ALTER TABLE \"public\".\"Course\" ADD COLUMN \"imageKey\" text DEFAULT 'graduate' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"imageKey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "imageKey"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"imageKey\" on \"Course\""
+        }
+      },
+      {
+        "description": "verify column \"imageKey\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "imageKey",
+          "text"
+        ]
+      },
+      {
+        "description": "verify column \"imageKey\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "imageKey",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Course.includesSignatureBonus",
+    "label": "Add column \"includesSignatureBonus\" to \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "includesSignatureBonus",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"includesSignatureBonus\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "includesSignatureBonus"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"includesSignatureBonus\" on \"Course\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"includesSignatureBonus\"",
+        "sql": "ALTER TABLE \"public\".\"Course\" ADD COLUMN \"includesSignatureBonus\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"includesSignatureBonus\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "includesSignatureBonus"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"includesSignatureBonus\" on \"Course\""
+        }
+      },
+      {
+        "description": "verify column \"includesSignatureBonus\" has type \"boolean\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "includesSignatureBonus",
+          "boolean"
+        ]
+      },
+      {
+        "description": "verify column \"includesSignatureBonus\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "includesSignatureBonus",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Course.includesToolkit",
+    "label": "Add column \"includesToolkit\" to \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "includesToolkit",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"includesToolkit\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "includesToolkit"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"includesToolkit\" on \"Course\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"includesToolkit\"",
+        "sql": "ALTER TABLE \"public\".\"Course\" ADD COLUMN \"includesToolkit\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"includesToolkit\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "includesToolkit"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"includesToolkit\" on \"Course\""
+        }
+      },
+      {
+        "description": "verify column \"includesToolkit\" has type \"boolean\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "includesToolkit",
+          "boolean"
+        ]
+      },
+      {
+        "description": "verify column \"includesToolkit\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "includesToolkit",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Course.isFeatured",
+    "label": "Add column \"isFeatured\" to \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "isFeatured",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"isFeatured\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "isFeatured"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"isFeatured\" on \"Course\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"isFeatured\"",
+        "sql": "ALTER TABLE \"public\".\"Course\" ADD COLUMN \"isFeatured\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"isFeatured\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "isFeatured"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"isFeatured\" on \"Course\""
+        }
+      },
+      {
+        "description": "verify column \"isFeatured\" has type \"boolean\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "isFeatured",
+          "boolean"
+        ]
+      },
+      {
+        "description": "verify column \"isFeatured\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "isFeatured",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Course.outcomeFrom",
+    "label": "Add column \"outcomeFrom\" to \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "outcomeFrom",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"outcomeFrom\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "outcomeFrom"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"outcomeFrom\" on \"Course\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"outcomeFrom\"",
+        "sql": "ALTER TABLE \"public\".\"Course\" ADD COLUMN \"outcomeFrom\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"outcomeFrom\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "outcomeFrom"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"outcomeFrom\" on \"Course\""
+        }
+      },
+      {
+        "description": "verify column \"outcomeFrom\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "outcomeFrom",
+          "text"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Course.outcomeTo",
+    "label": "Add column \"outcomeTo\" to \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "outcomeTo",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"outcomeTo\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "outcomeTo"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"outcomeTo\" on \"Course\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"outcomeTo\"",
+        "sql": "ALTER TABLE \"public\".\"Course\" ADD COLUMN \"outcomeTo\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"outcomeTo\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "outcomeTo"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"outcomeTo\" on \"Course\""
+        }
+      },
+      {
+        "description": "verify column \"outcomeTo\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "outcomeTo",
+          "text"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Course.sortOrder",
+    "label": "Add column \"sortOrder\" to \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "sortOrder",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"sortOrder\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "sortOrder"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"sortOrder\" on \"Course\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"sortOrder\"",
+        "sql": "ALTER TABLE \"public\".\"Course\" ADD COLUMN \"sortOrder\" int4 DEFAULT 0 NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"sortOrder\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "sortOrder"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"sortOrder\" on \"Course\""
+        }
+      },
+      {
+        "description": "verify column \"sortOrder\" has type \"integer\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "sortOrder",
+          "integer"
+        ]
+      },
+      {
+        "description": "verify column \"sortOrder\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "sortOrder",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Course.topics",
+    "label": "Add column \"topics\" to \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "topics",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"topics\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "topics"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"topics\" on \"Course\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"topics\"",
+        "sql": "ALTER TABLE \"public\".\"Course\" ADD COLUMN \"topics\" text[] DEFAULT ('{}'::text[]) NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"topics\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "topics"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"topics\" on \"Course\""
+        }
+      },
+      {
+        "description": "verify column \"topics\" has type \"text[]\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "topics",
+          "text[]"
+        ]
+      },
+      {
+        "description": "verify column \"topics\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "topics",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Course.track",
+    "label": "Add column \"track\" to \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "track",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"track\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "track"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"track\" on \"Course\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"track\"",
+        "sql": "ALTER TABLE \"public\".\"Course\" ADD COLUMN \"track\" text DEFAULT '' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"track\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "track"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"track\" on \"Course\""
+        }
+      },
+      {
+        "description": "verify column \"track\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "track",
+          "text"
+        ]
+      },
+      {
+        "description": "verify column \"track\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Course",
+          "track",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Module.topics",
+    "label": "Add column \"topics\" to \"Module\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "topics",
+        "table": "Module"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"topics\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Module",
+          "topics"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"topics\" on \"Module\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"topics\"",
+        "sql": "ALTER TABLE \"public\".\"Module\" ADD COLUMN \"topics\" text[] DEFAULT ('{}'::text[]) NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"topics\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Module",
+          "topics"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"topics\" on \"Module\""
+        }
+      },
+      {
+        "description": "verify column \"topics\" has type \"text[]\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Module",
+          "topics",
+          "text[]"
+        ]
+      },
+      {
+        "description": "verify column \"topics\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Module",
+          "topics",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.dropNotNull.Module.accessDays",
+    "label": "Drop NOT NULL on \"Module\".\"accessDays\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "accessDays",
+        "table": "Module"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"accessDays\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Module",
+          "accessDays"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"accessDays\" on \"Module\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop NOT NULL on \"accessDays\"",
+        "sql": "ALTER TABLE \"public\".\"Module\" ALTER COLUMN \"accessDays\" DROP NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"accessDays\" is nullable",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Module",
+          "accessDays",
+          "YES"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.dropNotNull.Module.price",
+    "label": "Drop NOT NULL on \"Module\".\"price\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "price",
+        "table": "Module"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"price\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Module",
+          "price"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"price\" on \"Module\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop NOT NULL on \"price\"",
+        "sql": "ALTER TABLE \"public\".\"Module\" ALTER COLUMN \"price\" DROP NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"price\" is nullable",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Module",
+          "price",
+          "YES"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.Course.Course_topics_elem_not_null_1acb8bbc",
+    "label": "Add check constraint \"Course_topics_elem_not_null_1acb8bbc\" on \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "Course_topics_elem_not_null_1acb8bbc",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Course_topics_elem_not_null_1acb8bbc\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Course_topics_elem_not_null_1acb8bbc",
+          "public",
+          "\"public\".\"Course\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"Course_topics_elem_not_null_1acb8bbc\" on \"Course\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"Course_topics_elem_not_null_1acb8bbc\"",
+        "sql": "ALTER TABLE \"public\".\"Course\" ADD CONSTRAINT \"Course_topics_elem_not_null_1acb8bbc\" CHECK (array_position(\"topics\", NULL) IS NULL)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify check constraint \"Course_topics_elem_not_null_1acb8bbc\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4)) AS \"result\"",
+        "params": [
+          "Course_topics_elem_not_null_1acb8bbc",
+          "public",
+          "\"public\".\"Course\"",
+          "c"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.Module.Module_topics_elem_not_null_1acb8bbc",
+    "label": "Add check constraint \"Module_topics_elem_not_null_1acb8bbc\" on \"Module\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "Module_topics_elem_not_null_1acb8bbc",
+        "table": "Module"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Module_topics_elem_not_null_1acb8bbc\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Module_topics_elem_not_null_1acb8bbc",
+          "public",
+          "\"public\".\"Module\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"Module_topics_elem_not_null_1acb8bbc\" on \"Module\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"Module_topics_elem_not_null_1acb8bbc\"",
+        "sql": "ALTER TABLE \"public\".\"Module\" ADD CONSTRAINT \"Module_topics_elem_not_null_1acb8bbc\" CHECK (array_position(\"topics\", NULL) IS NULL)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify check constraint \"Module_topics_elem_not_null_1acb8bbc\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4)) AS \"result\"",
+        "params": [
+          "Module_topics_elem_not_null_1acb8bbc",
+          "public",
+          "\"public\".\"Module\"",
+          "c"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Course.Course_isPublished_sortOrder_idx_654fec3c",
+    "label": "Create index \"Course_isPublished_sortOrder_idx_654fec3c\" on \"Course\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Course_isPublished_sortOrder_idx_654fec3c",
+        "table": "Course"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Course_isPublished_sortOrder_idx_654fec3c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Course_isPublished_sortOrder_idx_654fec3c\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"Course_isPublished_sortOrder_idx_654fec3c\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Course_isPublished_sortOrder_idx_654fec3c\"",
+        "sql": "CREATE INDEX \"Course_isPublished_sortOrder_idx_654fec3c\" ON \"public\".\"Course\" (\"isPublished\", \"sortOrder\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Course_isPublished_sortOrder_idx_654fec3c\" exists on \"Course\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"Course_isPublished_sortOrder_idx_654fec3c\"",
+          "i",
+          "I",
+          "\"public\".\"Course\"",
+          "btree",
+          "[\"isPublished\",\"sortOrder\"]"
+        ]
+      }
+    ]
+  }
+]

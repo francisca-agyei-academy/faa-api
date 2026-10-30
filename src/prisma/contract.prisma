@@ -1,0 +1,222 @@
+// use prisma-8
+// Ported from the Prisma 7 prisma/schema.prisma. Edit as needed, then run `prisma contract emit`.
+
+// ─────────────────────────────────────────────
+// SHARED
+// ─────────────────────────────────────────────
+
+// Node 24 has no global Temporal, so timestamps read and write JS Date.
+types {
+  Timestamp = TimestamptzJsDate(3)
+}
+
+model mixin Timestamps {
+  createdAt temporal.CreatedAtJsDate
+  updatedAt temporal.UpdatedAtJsDate
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum Role {
+  @@type("pg/text@1")
+  STUDENT = "STUDENT"
+  ADMIN   = "ADMIN"
+}
+
+enum OrderStatus {
+  @@type("pg/text@1")
+  PENDING  = "PENDING"
+  SUCCESS  = "SUCCESS"
+  FAILED   = "FAILED"
+  REFUNDED = "REFUNDED"
+}
+
+// ─────────────────────────────────────────────
+// MODELS
+// ─────────────────────────────────────────────
+
+model User {
+  id                  Cuid2      @id @onCreate(cuid(2))
+  email               String     @unique
+  password            String
+  firstName           String
+  lastName            String
+  phone               String?
+
+  // Account status
+  role                Role       @default(STUDENT)
+  isActive            Boolean    @default(true)
+  isEmailVerified     Boolean    @default(false)
+  emailVerifiedAt     Timestamp?
+
+  // Verification & password reset tokens
+  emailVerificationToken   String?    @unique
+  emailVerificationExpiry  Timestamp?
+  passwordResetToken       String?    @unique
+  passwordResetExpiry      Timestamp?
+
+  // Bumped on password change/reset; JWTs carrying an older value are rejected
+  tokenVersion        Int        @default(0)
+
+  // Login tracking
+  lastLoginAt         Timestamp?
+  lastLoginIp         String?
+
+  // Reverse relations (no columns; they let queries include these rows)
+  sessions            Session[]
+  orders              Order[]
+  purchases           Purchase[]
+
+  +Timestamps
+
+  @@index([role])
+
+  @@rls
+}
+
+// One row per logged-in device. The refresh token lives in an httpOnly cookie;
+// only its SHA-256 hash is stored, and it rotates on every refresh.
+model Session {
+  id                Cuid2      @id @onCreate(cuid(2))
+  userId            Cuid2
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash         String     @unique
+  // The token this one replaced, kept to tell a stolen-token replay from a two-tab race
+  previousTokenHash String?    @unique
+  rotatedAt         Timestamp?
+  expiresAt         Timestamp
+  lastUsedAt        Timestamp
+  userAgent         String?
+  ip                String?
+  createdAt         temporal.CreatedAtJsDate
+
+  @@index([userId])
+
+  @@rls
+}
+
+model Course {
+  id          Cuid2   @id @onCreate(cuid(2))
+  title       String
+  slug        String  @unique
+  // Short summary shown on course cards and the course page header
+  description String
+  // Catalog grouping, e.g. "Scholarships for Masters & PhDs"
+  track       String  @default("")
+  // "Are you…?" — who the course is for
+  audience    String?
+  outcomeFrom String?
+  outcomeTo   String?
+  // Topics listed for a course whose modules aren't broken down yet
+  topics      String[] @default(sql`'{}'::text[]`)
+  // Which bundled website photo to show (see web/src/content/courseImages.ts)
+  imageKey    String  @default("graduate")
+
+  // Visible on the website at all
+  isPublished            Boolean @default(false)
+  // Shown as the flagship course
+  isFeatured             Boolean @default(false)
+  // Modules can be bought; otherwise shown as "Coming soon" / "Enrolment opens soon"
+  enrollmentOpen         Boolean @default(false)
+  includesToolkit        Boolean @default(false)
+  includesSignatureBonus Boolean @default(false)
+  // Position in the catalog, lowest first
+  sortOrder              Int     @default(0)
+
+  modules                Module[]
+
+  +Timestamps
+
+  @@index([isPublished, sortOrder])
+
+  @@rls
+}
+
+model Module {
+  id           Cuid2   @id @onCreate(cuid(2))
+  courseId     Cuid2
+  course       Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  order        Int     @default(0)
+  // Lessons covered in the module
+  topics       String[] @default(sql`'{}'::text[]`)
+  // In pesewas (GHS smallest unit); null until the price is set
+  price        Int?
+  // Days of access after purchase; null until set
+  accessDays   Int?
+  contentUrl   String?
+  thumbnailUrl String?
+  previewUrl   String?
+  isPublished  Boolean @default(false)
+
+  purchases    Purchase[]
+
+  +Timestamps
+
+  @@unique([courseId, order])
+
+  @@rls
+}
+
+model Order {
+  id        Cuid2       @id @onCreate(cuid(2))
+  userId    Cuid2
+  user      User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  reference String      @unique
+  amount    Int
+  currency  String      @default("GHS")
+  status    OrderStatus @default(PENDING)
+  paidAt    Timestamp?
+
+  purchases    Purchase[]
+  transactions PaymentTransaction[]
+
+  +Timestamps
+
+  @@index([userId])
+
+  @@rls
+}
+
+model Purchase {
+  id        Cuid2     @id @onCreate(cuid(2))
+  userId    Cuid2
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  moduleId  Cuid2
+  module    Module    @relation(fields: [moduleId], references: [id], onDelete: Restrict)
+  orderId   Cuid2
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  expiresAt Timestamp
+  createdAt temporal.CreatedAtJsDate
+
+  @@unique([userId, moduleId])
+  @@index([moduleId])
+  @@index([orderId])
+
+  @@rls
+}
+
+model PaymentTransaction {
+  id                Cuid2      @id @onCreate(cuid(2))
+  orderId           Cuid2
+  order             Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reference         String     @unique
+  paystackId        Int?
+  amount            Int
+  currency          String     @default("GHS")
+  status            String
+  gatewayResponse   String?
+  channel           String?
+  authorizationCode String?
+  rawResponse       Json?
+  paidAt            Timestamp?
+
+  +Timestamps
+
+  @@index([orderId])
+
+  @@rls
+}

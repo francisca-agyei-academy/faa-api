@@ -1,0 +1,26 @@
+# Dependencies and build output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Secrets: never commit. Set these on the host (e.g. Railway variables).
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Agent skills copied in by `prisma skills sync` on every install
+.agents/
+.claude/
+.cursor/
+.devin/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
