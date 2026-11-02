@@ -41,9 +41,9 @@ const authResult = {
 export const openapiSpec = {
   openapi: "3.0.3",
   info: {
-    title: "FAA Platform API",
+    title: "Gradvane Global API",
     version: "1.0.0",
-    description: "Courses, modules and Paystack payments for the FAA learning platform.",
+    description: "Courses, modules and Paystack payments for the Gradvane Global learning platform.",
   },
   servers: [{ url: "/api/v1" }],
   tags: [{ name: "Auth" }],

@@ -113,6 +113,8 @@ model Course {
   topics      String[] @default(sql`'{}'::text[]`)
   // Which bundled website photo to show (see web/src/content/courseImages.ts)
   imageKey    String  @default("graduate")
+  // An uploaded photo (Cloudflare R2). When set, it is shown instead of imageKey.
+  imageUrl    String?
 
   // Visible on the website at all
   isPublished            Boolean @default(false)
@@ -153,6 +155,7 @@ model Module {
   isPublished  Boolean @default(false)
 
   purchases    Purchase[]
+  orders       Order[]
 
   +Timestamps
 
@@ -170,6 +173,9 @@ model Order {
   currency  String      @default("GHS")
   status    OrderStatus @default(PENDING)
   paidAt    Timestamp?
+  // The module being bought; access is granted for it once Paystack confirms payment
+  moduleId  Cuid2?
+  module    Module?     @relation(fields: [moduleId], references: [id], onDelete: Restrict)
 
   purchases    Purchase[]
   transactions PaymentTransaction[]
@@ -204,7 +210,8 @@ model PaymentTransaction {
   orderId           Cuid2
   order             Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
   reference         String     @unique
-  paystackId        Int?
+  // Paystack transaction ids exceed 32-bit integers, so they are kept as text
+  paystackId        String?
   amount            Int
   currency          String     @default("GHS")
   status            String

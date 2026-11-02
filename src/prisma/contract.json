@@ -120,6 +120,13 @@
                   "kind": "scalar"
                 }
               },
+              "imageUrl": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "includesSignatureBonus": {
                 "nullable": false,
                 "type": {
@@ -244,6 +251,9 @@
                 },
                 "imageKey": {
                   "column": "imageKey"
+                },
+                "imageUrl": {
+                  "column": "imageUrl"
                 },
                 "includesSignatureBonus": {
                   "column": "includesSignatureBonus"
@@ -413,6 +423,21 @@
                   "namespace": "public"
                 }
               },
+              "orders": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "moduleId"
+                  ]
+                },
+                "to": {
+                  "model": "Order",
+                  "namespace": "public"
+                }
+              },
               "purchases": {
                 "cardinality": "1:N",
                 "on": {
@@ -511,6 +536,16 @@
                   }
                 }
               },
+              "moduleId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sql/char@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "length": 24
+                  }
+                }
+              },
               "paidAt": {
                 "nullable": true,
                 "type": {
@@ -560,6 +595,22 @@
               }
             },
             "relations": {
+              "module": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "moduleId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Module",
+                  "namespace": "public"
+                }
+              },
               "purchases": {
                 "cardinality": "1:N",
                 "on": {
@@ -620,6 +671,9 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "moduleId": {
+                  "column": "moduleId"
                 },
                 "paidAt": {
                   "column": "paidAt"
@@ -718,7 +772,7 @@
               "paystackId": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -1460,6 +1514,11 @@
                   },
                   "nullable": false
                 },
+                "imageUrl": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
                 "includesSignatureBonus": {
                   "codecId": "pg/bool@1",
                   "dataType": "pg/bool",
@@ -1760,6 +1819,14 @@
                     "length": 24
                   }
                 },
+                "moduleId": {
+                  "codecId": "sql/char@1",
+                  "dataType": "pg/char",
+                  "nullable": true,
+                  "typeParams": {
+                    "length": 24
+                  }
+                },
                 "paidAt": {
                   "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
@@ -1822,9 +1889,37 @@
                     "namespaceId": "public",
                     "tableName": "User"
                   }
+                },
+                {
+                  "index": {
+                    "name": "Order_moduleId_idx_04fe188b"
+                  },
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "moduleId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Order"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Module"
+                  }
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "moduleId"
+                  ],
+                  "name": "Order_moduleId_idx_04fe188b",
+                  "prefix": "Order_moduleId_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "userId"
@@ -1908,8 +2003,8 @@
                   }
                 },
                 "paystackId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
                   "nullable": true
                 },
                 "rawResponse": {
@@ -2446,7 +2541,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d8671939913d3883b7cb407c36d0e45d28648a5519cf8122d437d7c4c382d083"
+    "storageHash": "faa9ff5d85b47ab41cf108f310d46f849c9b4cb7ac19b1d343b2bc05b94584ce"
   },
   "execution": {
     "executionHash": "0e02fa5f2fc68ad5eddb3ed2c8ac22c13ff51db35c2ba14a11182b53470642b9",

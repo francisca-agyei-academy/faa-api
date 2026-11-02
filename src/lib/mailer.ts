@@ -19,7 +19,7 @@ const transport =
       })
     : null;
 
-const from = env.EMAIL_FROM ?? (env.GMAIL_USER ? `FAA Platform <${env.GMAIL_USER}>` : "FAA Platform <no-reply@localhost>");
+const from = env.EMAIL_FROM ?? (env.GMAIL_USER ? `Gradvane Global <${env.GMAIL_USER}>` : "Gradvane Global <no-reply@localhost>");
 
 export async function sendEmail(email: Email): Promise<void> {
   if (!transport) {

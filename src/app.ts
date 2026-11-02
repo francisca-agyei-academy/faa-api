@@ -9,6 +9,7 @@ import { errorHandler } from "./middleware/error.middleware.js";
 import { notFoundHandler } from "./middleware/notFound.middleware.js";
 import { requestLogger } from "./middleware/requestLogger.middleware.js";
 import { apiRouter } from "./routes/index.js";
+import { paystackWebhook } from "./routes/v1/payments.routes.js";
 import { openapiSpec } from "./swagger/openapi.js";
 
 export function createApp() {
@@ -49,7 +50,10 @@ export function createApp() {
     }),
   );
 
-  // 4. Body and cookie parsing
+  // 4. Paystack webhook needs the raw body to check its signature, so it goes before the JSON parser.
+  app.post("/api/v1/payments/webhook", express.raw({ type: "application/json", limit: "1mb" }), paystackWebhook);
+
+  // 5. Body and cookie parsing
   app.use(express.json({ limit: "1mb" }));
   app.use(cookieParser());
 

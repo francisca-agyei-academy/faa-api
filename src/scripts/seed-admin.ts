@@ -26,7 +26,7 @@ try {
     await db.orm.public.User.create({
       email,
       password: await bcrypt.hash(password, 12),
-      firstName: "FAA",
+      firstName: "Gradvane",
       lastName: "Admin",
       role: "ADMIN",
       isEmailVerified: true,

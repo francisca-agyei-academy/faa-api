@@ -1,6 +1,7 @@
 import { db } from "../../lib/db.js";
 import { conflict, isForeignKeyViolation, isUniqueViolation, notFound } from "../../lib/errors.js";
 import { logger } from "../../lib/logger.js";
+import { deleteStoredImage, uploadCourseImage } from "../../lib/storage.js";
 import {
   courseCreateSchema,
   courseUpdateSchema,
@@ -65,6 +66,25 @@ async function remove(id: string, adminId: string) {
   }
 }
 
+async function setImage(id: string, file: { buffer: Buffer; mimetype: string }, adminId: string) {
+  const existing = await db.orm.public.Course.where({ id }).select("imageUrl").first();
+  if (!existing) throw notFound("Course not found");
+  const imageUrl = await uploadCourseImage(file, id);
+  const course = await db.orm.public.Course.where({ id }).update({ imageUrl });
+  await deleteStoredImage(existing.imageUrl);
+  log.info({ event: "admin.course_image_set", adminId, courseId: id }, "course image uploaded");
+  return course;
+}
+
+async function removeImage(id: string, adminId: string) {
+  const existing = await db.orm.public.Course.where({ id }).select("imageUrl").first();
+  if (!existing) throw notFound("Course not found");
+  const course = await db.orm.public.Course.where({ id }).update({ imageUrl: null });
+  await deleteStoredImage(existing.imageUrl);
+  log.info({ event: "admin.course_image_removed", adminId, courseId: id }, "course image removed");
+  return course;
+}
+
 async function createModule(courseId: string, body: unknown, adminId: string) {
   const input = moduleCreateSchema.parse(body);
   const course = await db.orm.public.Course.where({ id: courseId }).select("id").first();
@@ -125,6 +145,8 @@ export const adminCourseService = {
   create,
   update,
   remove,
+  setImage,
+  removeImage,
   createModule,
   updateModule,
   removeModule,

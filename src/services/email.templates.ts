@@ -6,13 +6,14 @@ const escapeHtml = (value: string) =>
 
 function layout(heading: string, intro: string, buttonLabel: string, link: string, footer: string) {
   return `<!doctype html>
-<html><body style="margin:0;padding:24px;background:#f5f5f4;font-family:Arial,sans-serif;color:#1c1917">
+<html><body style="margin:0;padding:24px;background:#f4f3fa;font-family:Arial,sans-serif;color:#17163a">
+  <div style="max-width:480px;margin:0 auto 12px;font-family:Arial,sans-serif;font-size:18px;font-weight:800;color:#2b2a6e">Gradvane Global</div>
   <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px">
     <h1 style="font-size:20px;margin:0 0 16px">${heading}</h1>
     <p style="font-size:15px;line-height:1.5;margin:0 0 24px">${intro}</p>
-    <a href="${link}" style="display:inline-block;background:#1c1917;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;font-size:15px">${buttonLabel}</a>
-    <p style="font-size:13px;line-height:1.5;color:#57534e;margin:24px 0 0">If the button doesn't work, paste this link into your browser:<br><a href="${link}" style="color:#57534e;word-break:break-all">${link}</a></p>
-    <p style="font-size:13px;line-height:1.5;color:#57534e;margin:16px 0 0">${footer}</p>
+    <a href="${link}" style="display:inline-block;background:#2b2a6e;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;font-size:15px">${buttonLabel}</a>
+    <p style="font-size:13px;line-height:1.5;color:#4e4d6b;margin:24px 0 0">If the button doesn't work, paste this link into your browser:<br><a href="${link}" style="color:#4e4d6b;word-break:break-all">${link}</a></p>
+    <p style="font-size:13px;line-height:1.5;color:#4e4d6b;margin:16px 0 0">${footer}</p>
   </div>
 </body></html>`;
 }

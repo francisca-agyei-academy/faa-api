@@ -1,5 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
+import { MulterError } from "multer";
 import { ZodError } from "zod";
+import { MAX_UPLOAD_BYTES } from "../lib/storage.js";
 import { isProduction } from "../config/env.js";
 import { AppError, isUniqueViolation } from "../lib/errors.js";
 
@@ -8,6 +10,12 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
     return res.status(err.statusCode).json({
       error: { code: err.code, message: err.message, details: err.details },
     });
+  }
+
+  if (err instanceof MulterError) {
+    const message =
+      err.code === "LIMIT_FILE_SIZE" ? `Images can be up to ${MAX_UPLOAD_BYTES / 1024 / 1024} MB.` : "That upload couldn't be processed.";
+    return res.status(400).json({ error: { code: "UPLOAD_REJECTED", message } });
   }
 
   if (err instanceof ZodError) {

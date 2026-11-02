@@ -44,9 +44,24 @@ const envSchema = z.object({
   // Google shows App Passwords as "abcd efgh ijkl mnop"; the spaces are not part of it.
   GMAIL_APP_PASSWORD: optional(z.string().transform((value) => value.replace(/\s+/g, ""))),
   EMAIL_FROM: optional(z.string()),
+
+  // Paystack. The secret key stays on the server; test keys start with sk_test_.
+  PAYSTACK_SECRET_KEY: optional(z.string().startsWith("sk_")),
+  PAYSTACK_PUBLIC_KEY: optional(z.string().startsWith("pk_")),
+
+  // Cloudflare R2 (S3-compatible) for uploaded course images. Uploads are disabled until all are set.
+  R2_ACCOUNT_ID: optional(z.string()),
+  R2_ACCESS_KEY_ID: optional(z.string()),
+  R2_SECRET_ACCESS_KEY: optional(z.string()),
+  R2_BUCKET: optional(z.string()),
+  // Public base URL of the bucket, e.g. https://pub-xxxx.r2.dev or https://media.example.com
+  R2_PUBLIC_URL: optional(z.url().transform((url) => url.replace(/\/+$/, ""))),
 }).superRefine((value, ctx) => {
   if (value.NODE_ENV === "production" && (!value.GMAIL_USER || !value.GMAIL_APP_PASSWORD)) {
     ctx.addIssue({ code: "custom", path: ["GMAIL_USER"], message: "GMAIL_USER and GMAIL_APP_PASSWORD are required in production" });
+  }
+  if (value.NODE_ENV === "production" && !value.PAYSTACK_SECRET_KEY) {
+    ctx.addIssue({ code: "custom", path: ["PAYSTACK_SECRET_KEY"], message: "PAYSTACK_SECRET_KEY is required in production" });
   }
   const secure = value.COOKIE_SECURE ?? value.NODE_ENV === "production";
   if (value.COOKIE_SAMESITE === "none" && !secure) {
@@ -67,3 +82,6 @@ if (!parsed.success) {
 export const env = parsed.data;
 export const isProduction = env.NODE_ENV === "production";
 export const docsEnabled = env.ENABLE_DOCS ?? !isProduction;
+export const r2Configured = Boolean(
+  env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && env.R2_BUCKET && env.R2_PUBLIC_URL,
+);
