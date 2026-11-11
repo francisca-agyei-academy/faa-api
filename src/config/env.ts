@@ -28,6 +28,9 @@ const envSchema = z.object({
         .map((origin) => origin.trim())
         .filter(Boolean),
     ),
+  // Proxies in front of the API, so req.ip (used for rate limits) is the visitor's IP.
+  // 1 for a single host proxy; 2 when the website also forwards /api/v1 (Vercel -> Render).
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(1),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   // Human-readable logs. Defaults to on, except in production (where logs are JSON, one per line).
   LOG_PRETTY: optional(z.stringbool()),

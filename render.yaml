@@ -1,0 +1,52 @@
+# Render Blueprint for the staging API. In the Render dashboard: New > Blueprint, pick this repo.
+# Values marked `sync: false` are asked for once, when the Blueprint is first created.
+services:
+  - type: web
+    name: gradvane-api-staging
+    runtime: node
+    plan: free
+    region: frankfurt # closest Render region to the Supabase database (eu-west-3, Paris)
+    buildCommand: npx --yes pnpm@12.16.1 install --frozen-lockfile && npx --yes pnpm@12.16.1 build
+    startCommand: node dist/server.js
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 24.12.0
+      - key: NODE_ENV
+        value: production
+      # Vercel forwards /api/v1 to Render, so there are two proxies in front of the API.
+      - key: TRUST_PROXY_HOPS
+        value: "2"
+      - key: ENABLE_DOCS
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      # The Vercel site, e.g. https://gradvane-staging.vercel.app
+      - key: APP_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      # Optional: course photo uploads stay off until these are set.
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false

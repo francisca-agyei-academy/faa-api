@@ -14,7 +14,7 @@ import { openapiSpec } from "./swagger/openapi.js";
 
 export function createApp() {
   const app = express();
-  app.set("trust proxy", 1); // Railway sits behind one proxy; makes req.ip the client's IP
+  app.set("trust proxy", env.TRUST_PROXY_HOPS); // makes req.ip the client's IP behind the host's proxies
 
   // 0. Request logging and X-Request-Id, first so every response is logged
   app.use(requestLogger);
