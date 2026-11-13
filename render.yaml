@@ -6,13 +6,17 @@ services:
     runtime: node
     plan: free
     region: frankfurt # closest Render region to the Supabase database (eu-west-3, Paris)
-    buildCommand: npx --yes pnpm@12.16.1 install --frozen-lockfile && npx --yes pnpm@12.16.1 build
+    # Corepack (bundled with Node 24) runs the pnpm pinned in package.json; npx would trip npm's devEngines check.
+    # --prod=false: NODE_ENV=production also applies at build time, and TypeScript is a devDependency.
+    buildCommand: corepack pnpm install --frozen-lockfile --prod=false && corepack pnpm build
     startCommand: node dist/server.js
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
       - key: NODE_VERSION
         value: 24.12.0
+      - key: COREPACK_ENABLE_DOWNLOAD_PROMPT
+        value: "0"
       - key: NODE_ENV
         value: production
       # Vercel forwards /api/v1 to Render, so there are two proxies in front of the API.
