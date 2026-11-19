@@ -4,10 +4,24 @@ import type { Email } from "../lib/mailer.js";
 const escapeHtml = (value: string) =>
   value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
+/**
+ * The logo, as in the website header. A PNG (most email apps don't show SVG), served by the website.
+ * The name is real text, so it still shows when the reader's email app blocks images.
+ */
+function brandHeader() {
+  return `<table role="presentation" style="max-width:480px;width:100%;margin:0 auto 16px;border-collapse:collapse"><tr>
+    <td style="width:48px;padding:0 12px 0 0;vertical-align:middle"><img src="${env.APP_URL}/email/logo.png" width="48" height="48" alt="" style="display:block;border:0;width:48px;height:48px"></td>
+    <td style="vertical-align:middle;font-family:Arial,sans-serif">
+      <div style="font-size:20px;font-weight:800;color:#2b2a6e;line-height:1.1">Gradvane Global</div>
+      <div style="font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#4e4d6b;margin-top:4px">Learn &middot; Prepare &middot; Progress</div>
+    </td>
+  </tr></table>`;
+}
+
 function layout(heading: string, intro: string, buttonLabel: string, link: string, footer: string) {
   return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f3fa;font-family:Arial,sans-serif;color:#17163a">
-  <div style="max-width:480px;margin:0 auto 12px;font-family:Arial,sans-serif;font-size:18px;font-weight:800;color:#2b2a6e">Gradvane Global</div>
+  ${brandHeader()}
   <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px">
     <h1 style="font-size:20px;margin:0 0 16px">${heading}</h1>
     <p style="font-size:15px;line-height:1.5;margin:0 0 24px">${intro}</p>
@@ -85,4 +99,96 @@ export function passwordChangedEmail(to: string, firstName: string): Email {
       "If you made this change, no action is needed.",
     ),
   };
+}
+
+export interface ReceiptLine {
+  title: string;
+  /** e.g. "Access until 19 Nov 2027" */
+  detail: string;
+}
+
+export interface Receipt {
+  to: string;
+  firstName: string;
+  reference: string;
+  paidAt: Date;
+  /** What was bought: the module, or the course with its modules listed under it */
+  heading: string;
+  lines: ReceiptLine[];
+  /** In pesewas */
+  amount: number;
+  currency: string;
+  method: string;
+}
+
+const formatMoney = (amount: number, currency: string) =>
+  `${currency === "GHS" ? "GH₵" : `${currency} `}${(amount / 100).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+export const formatReceiptDate = (date: Date) =>
+  date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Accra" });
+
+/** Sent once a payment is confirmed (or an admin records one): what was bought, what was paid, and until when. */
+export function receiptEmail(r: Receipt): Email {
+  const link = `${env.APP_URL}/my-courses`;
+  const total = r.amount > 0 ? formatMoney(r.amount, r.currency) : "Free";
+  const paidOn = r.paidAt.toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Africa/Accra",
+  });
+  const row = (label: string, value: string) =>
+    `<tr><td style="padding:6px 0;color:#4e4d6b;font-size:14px">${label}</td><td style="padding:6px 0;text-align:right;font-size:14px">${value}</td></tr>`;
+  const items = r.lines
+    .map(
+      (l) =>
+        `<li style="margin:0 0 8px"><span style="font-weight:600">${escapeHtml(l.title)}</span><br><span style="color:#4e4d6b;font-size:13px">${escapeHtml(l.detail)}</span></li>`,
+    )
+    .join("");
+
+  const text = [
+    `Hi ${r.firstName},`,
+    "",
+    "Thank you for your purchase. Here is your receipt.",
+    "",
+    `Receipt: ${r.reference}`,
+    `Date: ${paidOn} (GMT)`,
+    `Payment method: ${r.method}`,
+    "",
+    r.heading,
+    ...r.lines.map((l) => `  - ${l.title} (${l.detail})`),
+    "",
+    `Total paid: ${total}`,
+    "",
+    `Open your courses: ${link}`,
+    "",
+    "Keep this email for your records. If anything looks wrong, contact us and quote your receipt number.",
+  ].join("\n");
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:24px;background:#f4f3fa;font-family:Arial,sans-serif;color:#17163a">
+  ${brandHeader()}
+  <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px">
+    <h1 style="font-size:20px;margin:0 0 8px">Your receipt</h1>
+    <p style="font-size:15px;line-height:1.5;margin:0 0 24px">Hi ${escapeHtml(r.firstName)}, thank you for your purchase. Your access is ready.</p>
+    <table role="presentation" style="width:100%;border-collapse:collapse;margin:0 0 16px">
+      ${row("Receipt", escapeHtml(r.reference))}
+      ${row("Date", `${paidOn} GMT`)}
+      ${row("Payment method", escapeHtml(r.method))}
+    </table>
+    <div style="border-top:1px solid #e4e3ef;border-bottom:1px solid #e4e3ef;padding:16px 0;margin:0 0 16px">
+      <p style="font-size:15px;font-weight:700;margin:0 0 10px">${escapeHtml(r.heading)}</p>
+      <ul style="margin:0;padding:0 0 0 18px;font-size:14px;line-height:1.4">${items}</ul>
+    </div>
+    <table role="presentation" style="width:100%;border-collapse:collapse;margin:0 0 24px">
+      <tr><td style="font-size:16px;font-weight:700">Total paid</td><td style="text-align:right;font-size:16px;font-weight:700">${total}</td></tr>
+    </table>
+    <a href="${link}" style="display:inline-block;background:#2b2a6e;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;font-size:15px">Open my courses</a>
+    <p style="font-size:13px;line-height:1.5;color:#4e4d6b;margin:24px 0 0">Keep this email for your records. If anything looks wrong, contact us and quote your receipt number.</p>
+  </div>
+</body></html>`;
+
+  return { to: r.to, subject: `Your Gradvane Global receipt (${r.reference})`, text, html };
 }

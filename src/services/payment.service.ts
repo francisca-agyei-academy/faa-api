@@ -4,6 +4,8 @@ import { env } from "../config/env.js";
 import { db } from "../lib/db.js";
 import { AppError, conflict, notFound, unauthorized } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
+import { sendEmailInBackground } from "../lib/mailer.js";
+import { formatReceiptDate, receiptEmail } from "./email.templates.js";
 import { initializeTransaction, verifyTransaction, type PaystackTransaction } from "../lib/paystack.js";
 import { manualOrderSchema } from "../types/admin.types.js";
 
@@ -151,6 +153,67 @@ async function grantModule(
   }
 }
 
+/** How the student paid, from what Paystack reported, e.g. "Visa card ending 4081" or "Mobile money (MTN)". */
+function paymentMethod(tx: { channel: string | null; rawResponse: unknown } | null) {
+  if (!tx?.channel) return "Online payment";
+  const auth = (tx.rawResponse as { authorization?: { last4?: string; brand?: string; bank?: string } } | null)
+    ?.authorization;
+  if (tx.channel === "card") {
+    const brand = auth?.brand ? `${auth.brand.charAt(0).toUpperCase()}${auth.brand.slice(1)} card` : "Card";
+    return auth?.last4 ? `${brand} ending ${auth.last4}` : brand;
+  }
+  if (tx.channel === "mobile_money") return auth?.bank ? `Mobile money (${auth.bank})` : "Mobile money";
+  const label = tx.channel.replace(/_/g, " ");
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** Emails the student a receipt for a paid order. Never throws: a receipt must not undo a payment. */
+async function sendReceipt(orderId: string) {
+  try {
+    const order = await db.orm.public.Order.where({ id: orderId })
+      .select("id", "reference", "amount", "currency", "paidAt", "moduleId", "courseId")
+      .include("user", (u) => u.select("email", "firstName"))
+      .first();
+    if (!order?.user) return;
+
+    const [purchases, course, tx] = await Promise.all([
+      db.orm.public.Purchase.where({ orderId })
+        .select("expiresAt")
+        .include("module", (m) => m.select("title", "order").include("course", (c) => c.select("title")))
+        .all(),
+      order.courseId ? db.orm.public.Course.where({ id: order.courseId }).select("title").first() : null,
+      order.reference.startsWith("MAN-")
+        ? null
+        : db.orm.public.PaymentTransaction.where({ orderId }).select("channel", "rawResponse").first(),
+    ]);
+
+    const lines = purchases
+      .filter((p) => p.module)
+      .sort((a, b) => a.module!.order - b.module!.order)
+      .map((p) => ({ title: p.module!.title, detail: `Access until ${formatReceiptDate(p.expiresAt)}` }));
+    const heading = course
+      ? `${course.title} (full course)`
+      : (purchases[0]?.module?.course?.title ?? "Your purchase");
+    if (!lines.length) lines.push({ title: "No new modules", detail: "You already had access to every module in this course." });
+
+    sendEmailInBackground(
+      receiptEmail({
+        to: order.user.email,
+        firstName: order.user.firstName,
+        reference: order.reference,
+        paidAt: order.paidAt ?? new Date(),
+        heading,
+        lines,
+        amount: order.amount,
+        currency: order.currency,
+        method: order.reference.startsWith("MAN-") ? "Recorded by Gradvane Global" : paymentMethod(tx),
+      }),
+    );
+  } catch (err) {
+    log.error({ err, orderId }, "could not send receipt");
+  }
+}
+
 /** Saves what Paystack reported for this payment attempt (one transaction row per reference). */
 async function recordTransaction(orderId: string, tx: PaystackTransaction) {
   const fields = {
@@ -216,6 +279,8 @@ async function fulfil(reference: string, source: "callback" | "webhook") {
 
     if (granted) {
       log.info({ event: "payment.succeeded", source, reference, userId: order.userId, ...target }, "payment confirmed; access granted");
+      // Only the call that granted access sends it, so the callback and webhook don't send two.
+      await sendReceipt(order.id);
     }
     return { status: "SUCCESS" as const, ...target };
   }
@@ -323,7 +388,8 @@ async function recordManualOrder(adminId: string, userId: string, body: unknown)
   });
 
   log.info({ event: "payment.manual_order", adminId, userId, moduleId, courseId, amount: input.amount, reference }, "manual order recorded");
+  await sendReceipt(order.id);
   return order;
 }
 
-export const paymentService = { checkout, fulfil, verifyForUser, myPurchases, moduleContent, recordManualOrder };
+export const paymentService = { checkout, fulfil, verifyForUser, myPurchases, moduleContent, recordManualOrder, sendReceipt };
