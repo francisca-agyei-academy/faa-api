@@ -10,6 +10,7 @@ import { logger } from "../lib/logger.js";
 
 interface SeedModule {
   title: string;
+  description?: string;
   topics: string[];
 }
 
@@ -57,64 +58,56 @@ const catalog: SeedCourse[] = [
     ],
   },
   {
-    slug: "first-30-days-abroad",
-    track: "Studying Abroad",
-    title: "Your First 30 Days Abroad",
-    description: "Practical orientation for international students, from the airport to your first weeks on campus.",
+    slug: "life-after-your-offer-letter",
+    track: "Studying Abroad & Postgraduate Success",
+    title: "Life After Your Offer Letter",
+    description:
+      "Everything after the offer letter: settling in abroad, working with your supervisor, academic writing, publishing, AI for research and building an international career.",
     imageKey: "laptop-campus",
-    topics: ["Arrival", "Accommodation", "Banking", "Tax file number (TFN)", "Healthcare", "Transport", "Internet", "University setup and adjustment"],
-  },
-  {
-    slug: "working-with-your-supervisor",
-    track: "Postgraduate Success",
-    title: "Knowing Your Supervisor & Understanding Your Course",
-    description: "Build a strong working relationship with your supervisor and take ownership of your degree.",
-    imageKey: "reading-desk",
-    topics: [
-      "Know your supervisor",
-      "Supervisor–student expectations, including the use of AI",
-      "How to work with your supervisor",
-      "Understanding your academic and research environment",
-      "When things don't go as planned",
-      "Taking ownership of your degree",
-    ],
-  },
-  {
-    slug: "international-academic-career",
-    track: "Academic Careers",
-    title: "Building an International Academic Career",
-    description: "Grow your network, profile and opportunities beyond your degree.",
-    imageKey: "group-steps",
-    topics: ["Networking", "Seminars", "Conferences", "Fellowships", "Research collaborations", "Academic profiles and international career pathways"],
-  },
-  {
-    slug: "academic-writing-made-simple",
-    track: "Academic Writing",
-    title: "Academic Writing Made Simple",
-    description: "Write clearly, think critically and reference correctly, with responsible use of AI.",
-    imageKey: "writing",
-    topics: ["Academic writing", "Critical thinking", "Literature reviews", "Structure", "Referencing", "Plagiarism and responsible AI"],
-  },
-  {
-    slug: "research-to-published-paper",
-    track: "Research & Publishing",
-    title: "From Research Project to Published Paper",
-    description: "Take a research project through manuscript development, submission and peer review.",
-    imageKey: "reading-desk",
-    topics: ["Taking a research project through manuscript development", "Journal selection", "Submission", "Peer review and publication"],
-  },
-  {
-    slug: "ai-for-academic-research",
-    track: "AI for Research",
-    title: "AI for Academic Research",
-    description: "Use AI responsibly to understand literature, support your writing and speed up research workflows.",
-    imageKey: "laptop-classroom",
-    topics: [
-      "Responsible AI use for brainstorming",
-      "Literature understanding",
-      "Writing support",
-      "Research workflows",
-      "Coding and data assistance, and presentations",
+    modules: [
+      {
+        title: "Your First 30 Days Abroad",
+        description: "Practical orientation for international students, from the airport to your first weeks on campus.",
+        topics: ["Arrival", "Accommodation", "Banking", "Tax file number (TFN)", "Healthcare", "Transport", "Internet", "University setup and adjustment"],
+      },
+      {
+        title: "Knowing Your Supervisor & Understanding Your Course",
+        description: "Build a strong working relationship with your supervisor and take ownership of your degree.",
+        topics: [
+          "Know your supervisor",
+          "Supervisor–student expectations, including the use of AI",
+          "How to work with your supervisor",
+          "Understanding your academic and research environment",
+          "When things don't go as planned",
+          "Taking ownership of your degree",
+        ],
+      },
+      {
+        title: "Building an International Academic Career",
+        description: "Grow your network, profile and opportunities beyond your degree.",
+        topics: ["Networking", "Seminars", "Conferences", "Fellowships", "Research collaborations", "Academic profiles and international career pathways"],
+      },
+      {
+        title: "Academic Writing Made Simple",
+        description: "Write clearly, think critically and reference correctly, with responsible use of AI.",
+        topics: ["Academic writing", "Critical thinking", "Literature reviews", "Structure", "Referencing", "Plagiarism and responsible AI"],
+      },
+      {
+        title: "From Research Project to Published Paper",
+        description: "Take a research project through manuscript development, submission and peer review.",
+        topics: ["Taking a research project through manuscript development", "Journal selection", "Submission", "Peer review and publication"],
+      },
+      {
+        title: "AI for Academic Research",
+        description: "Use AI responsibly to understand literature, support your writing and speed up research workflows.",
+        topics: [
+          "Responsible AI use for brainstorming",
+          "Literature understanding",
+          "Writing support",
+          "Research workflows",
+          "Coding and data assistance, and presentations",
+        ],
+      },
     ],
   },
 ];
@@ -141,6 +134,7 @@ async function main() {
       await db.orm.public.Module.create({
         courseId: course.id,
         title: mod.title,
+        description: mod.description ?? null,
         topics: mod.topics,
         order: position + 1,
         price: null,
