@@ -33,10 +33,15 @@ services:
         sync: false
       - key: ALLOWED_ORIGINS
         sync: false
+      # Email goes through Resend (HTTPS); Render free blocks SMTP, so Gmail only works on a paid plan.
+      - key: RESEND_API_KEY
+        sync: false
+      # Optional fallback when RESEND_API_KEY is empty.
       - key: GMAIL_USER
         sync: false
       - key: GMAIL_APP_PASSWORD
         sync: false
+      # e.g. "Gradvane Global <onboarding@resend.dev>" until a domain is verified in Resend
       - key: EMAIL_FROM
         sync: false
       - key: PAYSTACK_SECRET_KEY

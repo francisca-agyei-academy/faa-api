@@ -2,12 +2,14 @@ import { docsEnabled, env } from "./config/env.js";
 import { createApp } from "./app.js";
 import { db } from "./lib/db.js";
 import { logger } from "./lib/logger.js";
+import { startEmailWorker, stopEmailWorker } from "./lib/mailer.js";
 
 const app = createApp();
 
 const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT }, `API running on http://localhost:${env.PORT}`);
   if (docsEnabled) logger.info(`Docs: http://localhost:${env.PORT}/docs`);
+  startEmailWorker();
 });
 
 // Railway sends SIGTERM on redeploy: finish in-flight requests, then close the DB pool.
@@ -24,6 +26,7 @@ function shutdown(signal: string) {
   forceExit.unref();
 
   server.close(async () => {
+    await stopEmailWorker();
     await db.close();
     logger.info("shutdown complete");
     process.exit(0);

@@ -33,6 +33,14 @@ enum OrderStatus {
   REFUNDED = "REFUNDED"
 }
 
+enum EmailStatus {
+  @@type("pg/text@1")
+  PENDING = "PENDING"
+  SENDING = "SENDING"
+  SENT    = "SENT"
+  FAILED  = "FAILED"
+}
+
 // ─────────────────────────────────────────────
 // MODELS
 // ─────────────────────────────────────────────
@@ -228,6 +236,30 @@ model PaymentTransaction {
   +Timestamps
 
   @@index([orderId])
+
+  @@rls
+}
+
+// Outgoing emails, sent by a background worker with retries so a provider hiccup or a
+// restart never loses one. The body is cleared once the email is sent or given up on,
+// so sign-in links do not stay in the database.
+model EmailJob {
+  id            Cuid2       @id @onCreate(cuid(2))
+  to            String
+  subject       String
+  text          String
+  html          String
+  status        EmailStatus @default(PENDING)
+  attempts      Int         @default(0)
+  nextAttemptAt Timestamp
+  lockedAt      Timestamp?
+  lastError     String?
+  providerId    String?
+  sentAt        Timestamp?
+
+  +Timestamps
+
+  @@index([status, nextAttemptAt])
 
   @@rls
 }

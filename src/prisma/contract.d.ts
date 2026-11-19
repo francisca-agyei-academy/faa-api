@@ -23,9 +23,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'a8685e053b5e7aa14942138d319283f3b85a45a8b41f686823d07b57c56faa3f'>;
+  StorageHashBase<'2bf6d918ae11a95efb966af76b7f97d693b99de0aae29350d7646cc13870fc23'>;
 export type ExecutionHash =
-  ExecutionHashBase<'0e02fa5f2fc68ad5eddb3ed2c8ac22c13ff51db35c2ba14a11182b53470642b9'>;
+  ExecutionHashBase<'d020e3b143300dad4ebbb751135b6bb783f70d25778e295e0843b094cbda5dc6'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -273,6 +273,12 @@ type ParameterizedOutputTypeFunctions = PgParameterizedOutputTypes;
 type FieldTypeOverrides = {
   readonly public: {
     readonly models: {
+      readonly EmailJob: {
+        readonly status: {
+          readonly output: 'PENDING' | 'SENDING' | 'SENT' | 'FAILED';
+          readonly input: 'PENDING' | 'SENDING' | 'SENT' | 'FAILED';
+        };
+      };
       readonly Order: {
         readonly status: {
           readonly output: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
@@ -304,6 +310,12 @@ export type FieldInputTypes = FieldTypesFromDomain<
 >;
 type ColumnTypeOverrides = {
   readonly public: {
+    readonly EmailJob: {
+      readonly status: {
+        readonly output: 'PENDING' | 'SENDING' | 'SENT' | 'FAILED';
+        readonly input: 'PENDING' | 'SENDING' | 'SENT' | 'FAILED';
+      };
+    };
     readonly Order: {
       readonly status: {
         readonly output: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
@@ -354,6 +366,23 @@ export namespace Models {
     modules: public_Module[];
     orders: public_Order[];
     readonly [RelationKeys]?: 'modules' | 'orders';
+  };
+  export type public_EmailJob = {
+    attempts: FieldOutputTypes['public']['EmailJob']['attempts'];
+    createdAt: FieldOutputTypes['public']['EmailJob']['createdAt'];
+    html: FieldOutputTypes['public']['EmailJob']['html'];
+    id: FieldOutputTypes['public']['EmailJob']['id'];
+    lastError: FieldOutputTypes['public']['EmailJob']['lastError'];
+    lockedAt: FieldOutputTypes['public']['EmailJob']['lockedAt'];
+    nextAttemptAt: FieldOutputTypes['public']['EmailJob']['nextAttemptAt'];
+    providerId: FieldOutputTypes['public']['EmailJob']['providerId'];
+    sentAt: FieldOutputTypes['public']['EmailJob']['sentAt'];
+    status: FieldOutputTypes['public']['EmailJob']['status'];
+    subject: FieldOutputTypes['public']['EmailJob']['subject'];
+    text: FieldOutputTypes['public']['EmailJob']['text'];
+    to: FieldOutputTypes['public']['EmailJob']['to'];
+    updatedAt: FieldOutputTypes['public']['EmailJob']['updatedAt'];
+    readonly [RelationKeys]?: never;
   };
   export type public_Module = {
     accessDays: FieldOutputTypes['public']['Module']['accessDays'];
@@ -468,6 +497,7 @@ export namespace Models {
 export declare const models: {
   public: {
     Course: Models.public_Course;
+    EmailJob: Models.public_EmailJob;
     Module: Models.public_Module;
     Order: Models.public_Order;
     PaymentTransaction: Models.public_PaymentTransaction;
@@ -656,6 +686,117 @@ type ContractBase = Omit<
                   readonly name: 'Course_isPublished_sortOrder_idx_654fec3c';
                   readonly prefix: 'Course_isPublished_sortOrder_idx';
                   readonly columns: readonly ['isPublished', 'sortOrder'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [];
+            };
+            readonly EmailJob: {
+              columns: {
+                readonly attempts: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly html: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/char';
+                  readonly codecId: 'sql/char@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly length: 24 };
+                  readonly many: false;
+                };
+                readonly lastError: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly lockedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: true;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly nextAttemptAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly providerId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly sentAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: true;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly status: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'PENDING'>;
+                  };
+                  readonly many: false;
+                };
+                readonly subject: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly text: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly to: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly updatedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'EmailJob_status_nextAttemptAt_idx_8ba20615';
+                  readonly prefix: 'EmailJob_status_nextAttemptAt_idx';
+                  readonly columns: readonly ['status', 'nextAttemptAt'];
                   readonly unique: false;
                 },
               ];
@@ -1406,6 +1547,10 @@ type ContractBase = Omit<
             };
           };
           readonly valueSet: {
+            readonly EmailStatus: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['PENDING', 'SENDING', 'SENT', 'FAILED'];
+            };
             readonly OrderStatus: {
               readonly kind: 'valueSet';
               readonly values: readonly ['PENDING', 'SUCCESS', 'FAILED', 'REFUNDED'];
@@ -1426,6 +1571,7 @@ type ContractBase = Omit<
   readonly targetFamily: 'sql';
   readonly roots: {
     readonly Course: { readonly namespace: 'public' & NamespaceId; readonly model: 'Course' };
+    readonly EmailJob: { readonly namespace: 'public' & NamespaceId; readonly model: 'EmailJob' };
     readonly Module: { readonly namespace: 'public' & NamespaceId; readonly model: 'Module' };
     readonly Order: { readonly namespace: 'public' & NamespaceId; readonly model: 'Order' };
     readonly PaymentTransaction: {
@@ -1576,6 +1722,109 @@ type ContractBase = Omit<
                 readonly title: { readonly column: 'title' };
                 readonly topics: { readonly column: 'topics' };
                 readonly track: { readonly column: 'track' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly EmailJob: {
+            readonly fields: {
+              readonly attempts: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                };
+              };
+              readonly html: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'sql/char@1';
+                  readonly typeParams: { readonly length: 24 };
+                };
+              };
+              readonly lastError: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly lockedAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly nextAttemptAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly providerId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly sentAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly status: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly subject: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly text: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly to: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'EmailJob';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly attempts: { readonly column: 'attempts' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly html: { readonly column: 'html' };
+                readonly id: { readonly column: 'id' };
+                readonly lastError: { readonly column: 'lastError' };
+                readonly lockedAt: { readonly column: 'lockedAt' };
+                readonly nextAttemptAt: { readonly column: 'nextAttemptAt' };
+                readonly providerId: { readonly column: 'providerId' };
+                readonly sentAt: { readonly column: 'sentAt' };
+                readonly status: { readonly column: 'status' };
+                readonly subject: { readonly column: 'subject' };
+                readonly text: { readonly column: 'text' };
+                readonly to: { readonly column: 'to' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };
@@ -2331,6 +2580,15 @@ type ContractBase = Omit<
           };
         };
         readonly enum: {
+          readonly EmailStatus: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'PENDING'; readonly value: 'PENDING' },
+              { readonly name: 'SENDING'; readonly value: 'SENDING' },
+              { readonly name: 'SENT'; readonly value: 'SENT' },
+              { readonly name: 'FAILED'; readonly value: 'FAILED' },
+            ];
+          };
           readonly OrderStatus: {
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
@@ -2349,6 +2607,12 @@ type ContractBase = Omit<
           };
         };
         readonly enumMemberTypes?: {
+          readonly EmailStatus: readonly [
+            { readonly name: 'PENDING'; readonly value: 'PENDING' },
+            { readonly name: 'SENDING'; readonly value: 'SENDING' },
+            { readonly name: 'SENT'; readonly value: 'SENT' },
+            { readonly name: 'FAILED'; readonly value: 'FAILED' },
+          ];
           readonly OrderStatus: readonly [
             { readonly name: 'PENDING'; readonly value: 'PENDING' },
             { readonly name: 'SUCCESS'; readonly value: 'SUCCESS' },
@@ -2416,6 +2680,31 @@ type ContractBase = Omit<
           readonly onUpdate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
           readonly ref: {
             readonly entry: 'Course';
+            readonly field: 'updatedAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'EmailJob';
+            readonly field: 'createdAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'cuid2'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'EmailJob';
+            readonly field: 'id';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly onUpdate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'EmailJob';
             readonly field: 'updatedAt';
             readonly namespace: 'public';
           };

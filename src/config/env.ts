@@ -41,8 +41,11 @@ const envSchema = z.object({
   // Frontend base URL; email links point at its /verify-email and /reset-password pages.
   APP_URL: z.url().default("http://localhost:3000"),
 
+  // Email is sent through Resend (HTTPS API) when RESEND_API_KEY is set, otherwise Gmail SMTP.
+  // Hosts that block SMTP ports (e.g. Render free) need Resend. With neither, outside
+  // production, emails are printed to the console instead of sent.
+  RESEND_API_KEY: optional(z.string().startsWith("re_")),
   // Gmail SMTP. Needs 2-Step Verification and an App Password (not the account password).
-  // Without them, outside production, emails are printed to the console instead of sent.
   GMAIL_USER: optional(z.email()),
   // Google shows App Passwords as "abcd efgh ijkl mnop"; the spaces are not part of it.
   GMAIL_APP_PASSWORD: optional(z.string().transform((value) => value.replace(/\s+/g, ""))),
@@ -60,8 +63,12 @@ const envSchema = z.object({
   // Public base URL of the bucket, e.g. https://pub-xxxx.r2.dev or https://media.example.com
   R2_PUBLIC_URL: optional(z.url().transform((url) => url.replace(/\/+$/, ""))),
 }).superRefine((value, ctx) => {
-  if (value.NODE_ENV === "production" && (!value.GMAIL_USER || !value.GMAIL_APP_PASSWORD)) {
-    ctx.addIssue({ code: "custom", path: ["GMAIL_USER"], message: "GMAIL_USER and GMAIL_APP_PASSWORD are required in production" });
+  const hasGmail = Boolean(value.GMAIL_USER && value.GMAIL_APP_PASSWORD);
+  if (value.NODE_ENV === "production" && !value.RESEND_API_KEY && !hasGmail) {
+    ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "RESEND_API_KEY (or GMAIL_USER and GMAIL_APP_PASSWORD) is required in production" });
+  }
+  if (value.RESEND_API_KEY && !value.EMAIL_FROM) {
+    ctx.addIssue({ code: "custom", path: ["EMAIL_FROM"], message: "EMAIL_FROM is required with Resend, e.g. \"Gradvane Global <onboarding@resend.dev>\"" });
   }
   if (value.NODE_ENV === "production" && !value.PAYSTACK_SECRET_KEY) {
     ctx.addIssue({ code: "custom", path: ["PAYSTACK_SECRET_KEY"], message: "PAYSTACK_SECRET_KEY is required in production" });
