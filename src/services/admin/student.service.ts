@@ -1,8 +1,13 @@
+import { randomBytes } from "node:crypto";
 import { and, or } from "@prisma/orm-postgres/orm-client";
+import bcrypt from "bcrypt";
 import { db } from "../../lib/db.js";
-import { badRequest, notFound } from "../../lib/errors.js";
+import { badRequest, conflict, isUniqueViolation, notFound } from "../../lib/errors.js";
 import { logger } from "../../lib/logger.js";
-import { paginate, studentListSchema, studentUpdateSchema } from "../../types/admin.types.js";
+import { sendEmailInBackground } from "../../lib/mailer.js";
+import { createEmailToken } from "../../lib/tokens.js";
+import { paginate, studentCreateSchema, studentListSchema, studentUpdateSchema } from "../../types/admin.types.js";
+import { verificationEmail, welcomeSetPasswordEmail } from "../email.templates.js";
 import { revokeAllSessions } from "../session.service.js";
 
 const log = logger.child({ module: "admin.students" });
@@ -85,4 +90,54 @@ async function update(id: string, body: unknown, adminId: string) {
   return updated;
 }
 
-export const adminStudentService = { list, get, update };
+const SETUP_LINK_DAYS = 3;
+const VERIFICATION_TTL_HOURS = 24;
+
+/**
+ * Creates an account for someone, e.g. a student who paid offline. Returns a temporary password
+ * the admin can pass on; it is shown once and never stored in plain text.
+ */
+async function create(body: unknown, adminId: string) {
+  const input = studentCreateSchema.parse(body);
+
+  const existing = await db.orm.public.User.where({ email: input.email }).select("id").first();
+  if (existing) throw conflict("An account with this email already exists");
+
+  const temporaryPassword = randomBytes(12).toString("base64url");
+  const setup = input.sendSetupEmail ? createEmailToken(SETUP_LINK_DAYS * 24 * 60) : null;
+  const verification = input.markVerified ? null : createEmailToken(VERIFICATION_TTL_HOURS * 60);
+
+  let student;
+  try {
+    student = await db.orm.public.User.select(...listFields).create({
+      email: input.email,
+      password: await bcrypt.hash(temporaryPassword, 12),
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone: input.phone ?? null,
+      role: input.role,
+      isEmailVerified: input.markVerified,
+      emailVerifiedAt: input.markVerified ? new Date() : null,
+      emailVerificationToken: verification?.hash ?? null,
+      emailVerificationExpiry: verification?.expiresAt ?? null,
+      passwordResetToken: setup?.hash ?? null,
+      passwordResetExpiry: setup?.expiresAt ?? null,
+    });
+  } catch (err) {
+    if (isUniqueViolation(err)) throw conflict("An account with this email already exists");
+    throw err;
+  }
+
+  if (setup) sendEmailInBackground(welcomeSetPasswordEmail(student.email, student.firstName, setup.raw, SETUP_LINK_DAYS));
+  if (verification) {
+    sendEmailInBackground(verificationEmail(student.email, student.firstName, verification.raw, VERIFICATION_TTL_HOURS));
+  }
+
+  log.info(
+    { event: "admin.student_created", adminId, userId: student.id, role: input.role, verified: input.markVerified, setupEmail: input.sendSetupEmail },
+    "student created by admin",
+  );
+  return { student, temporaryPassword };
+}
+
+export const adminStudentService = { list, get, update, create };

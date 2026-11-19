@@ -35,6 +35,24 @@ export function verificationEmail(to: string, firstName: string, rawToken: strin
   };
 }
 
+/** Sent when an admin creates an account: the link lets the student choose their own password. */
+export function welcomeSetPasswordEmail(to: string, firstName: string, rawToken: string, ttlDays: number): Email {
+  const link = `${env.APP_URL}/reset-password?token=${encodeURIComponent(rawToken)}`;
+  const name = escapeHtml(firstName);
+  return {
+    to,
+    subject: "Your Gradvane Global account is ready",
+    text: `Hi ${firstName},\n\nAn account has been created for you on Gradvane Global. Choose your password here to get started:\n${link}\n\nThis link expires in ${ttlDays} days and can be used once. After that, use "Forgot password" on the login page.`,
+    html: layout(
+      "Your account is ready",
+      `Hi ${name}, an account has been created for you on Gradvane Global.`,
+      "Choose your password",
+      link,
+      `This link expires in ${ttlDays} days and can be used once. After that, use "Forgot password" on the login page.`,
+    ),
+  };
+}
+
 export function passwordResetEmail(to: string, firstName: string, rawToken: string, ttlMinutes: number): Email {
   const link = `${env.APP_URL}/reset-password?token=${encodeURIComponent(rawToken)}`;
   const name = escapeHtml(firstName);

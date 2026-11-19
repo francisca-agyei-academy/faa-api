@@ -230,6 +230,21 @@
                   "model": "Module",
                   "namespace": "public"
                 }
+              },
+              "orders": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "courseId"
+                  ]
+                },
+                "to": {
+                  "model": "Order",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -512,6 +527,16 @@
                   "kind": "scalar"
                 }
               },
+              "courseId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sql/char@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "length": 24
+                  }
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -595,6 +620,22 @@
               }
             },
             "relations": {
+              "course": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "courseId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Course",
+                  "namespace": "public"
+                }
+              },
               "module": {
                 "cardinality": "N:1",
                 "nullable": true,
@@ -662,6 +703,9 @@
               "fields": {
                 "amount": {
                   "column": "amount"
+                },
+                "courseId": {
+                  "column": "courseId"
                 },
                 "createdAt": {
                   "column": "createdAt"
@@ -1797,6 +1841,14 @@
                   "dataType": "pg/int4",
                   "nullable": false
                 },
+                "courseId": {
+                  "codecId": "sql/char@1",
+                  "dataType": "pg/char",
+                  "nullable": true,
+                  "typeParams": {
+                    "length": 24
+                  }
+                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
@@ -1909,9 +1961,37 @@
                     "namespaceId": "public",
                     "tableName": "Module"
                   }
+                },
+                {
+                  "index": {
+                    "name": "Order_courseId_idx_12f72d2a"
+                  },
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "courseId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Order"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Course"
+                  }
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "courseId"
+                  ],
+                  "name": "Order_courseId_idx_12f72d2a",
+                  "prefix": "Order_courseId_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "moduleId"
@@ -2541,7 +2621,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "faa9ff5d85b47ab41cf108f310d46f849c9b4cb7ac19b1d343b2bc05b94584ce"
+    "storageHash": "a8685e053b5e7aa14942138d319283f3b85a45a8b41f686823d07b57c56faa3f"
   },
   "execution": {
     "executionHash": "0e02fa5f2fc68ad5eddb3ed2c8ac22c13ff51db35c2ba14a11182b53470642b9",

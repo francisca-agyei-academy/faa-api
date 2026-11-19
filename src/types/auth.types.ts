@@ -32,6 +32,17 @@ export const changePasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 
+/** What a student can change about themselves. Email changes are not supported yet. */
+export const profileUpdateSchema = z
+  .object({
+    firstName: z.string().trim().min(1).max(100),
+    lastName: z.string().trim().min(1).max(100),
+    // Empty clears the phone number.
+    phone: z.union([z.string().trim().min(7).max(20), z.literal("").transform(() => null), z.null()]),
+  })
+  .partial()
+  .refine((value) => Object.keys(value).length > 0, "Nothing to update");
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 

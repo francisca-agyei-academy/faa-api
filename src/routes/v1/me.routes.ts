@@ -1,10 +1,16 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/auth.middleware.js";
+import { authService } from "../../services/auth.service.js";
 import { paymentService } from "../../services/payment.service.js";
 
 const router = Router();
 
 router.use(requireAuth);
+
+// Edit your own name and phone number.
+router.patch("/profile", async (req, res) => {
+  res.json({ user: await authService.updateProfile(req.auth!.userId, req.body) });
+});
 
 // Modules the student has bought, with access dates.
 router.get("/purchases", async (req, res) => {

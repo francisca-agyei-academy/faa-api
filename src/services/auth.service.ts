@@ -10,6 +10,7 @@ import {
   changePasswordSchema,
   emailOnlySchema,
   loginSchema,
+  profileUpdateSchema,
   registerSchema,
   resetPasswordSchema,
   tokenSchema,
@@ -323,7 +324,17 @@ async function changePassword(userId: string, sessionId: string, body: unknown):
   return { accessToken: signAccessToken(user, tokenVersion, sessionId) };
 }
 
+/** Name and phone; the user is returned in the same shape as /auth/me. */
+async function updateProfile(userId: string, body: unknown): Promise<PublicUser> {
+  const input = profileUpdateSchema.parse(body);
+  const user = await db.orm.public.User.where({ id: userId }).select(...publicFields).update(input);
+  if (!user) throw unauthorized("Account no longer exists");
+  log.info({ event: "auth.profile_updated", userId, fields: Object.keys(input) }, "profile updated");
+  return user;
+}
+
 export const authService = {
+  updateProfile,
   register,
   login,
   refresh,

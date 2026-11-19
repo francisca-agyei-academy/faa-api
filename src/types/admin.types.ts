@@ -85,6 +85,25 @@ export const studentUpdateSchema = z
   .partial()
   .refine((value) => Object.keys(value).length > 0, "Nothing to update");
 
+export const studentCreateSchema = z.object({
+  email: z.email().transform((email) => email.trim().toLowerCase()),
+  firstName: z.string().trim().min(1).max(100),
+  lastName: z.string().trim().min(1).max(100),
+  phone: z.string().trim().min(7).max(20).optional(),
+  role: z.enum(["STUDENT", "ADMIN"]).default("STUDENT"),
+  /** Skip the confirmation email, e.g. for someone the admin already knows. */
+  markVerified: z.boolean().default(true),
+  /** Email them a link to choose their own password. */
+  sendSetupEmail: z.boolean().default(false),
+});
+
+/** A purchase an admin records for a student, e.g. paid by cash or bank transfer, or given free. */
+export const manualOrderSchema = z.intersection(
+  z.union([z.object({ moduleId: z.string().min(1).max(64) }), z.object({ courseId: z.string().min(1).max(64) })]),
+  // In pesewas; 0 for a free place. Capped at GH₵1,000,000.
+  z.object({ amount: z.number().int().min(0).max(100_000_000) }),
+);
+
 export const orderListSchema = z.object({
   search: z.string().trim().max(200).optional(),
   status: z.enum(["PENDING", "SUCCESS", "FAILED", "REFUNDED"]).optional(),

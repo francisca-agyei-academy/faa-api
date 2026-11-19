@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'faa9ff5d85b47ab41cf108f310d46f849c9b4cb7ac19b1d343b2bc05b94584ce'>;
+  StorageHashBase<'a8685e053b5e7aa14942138d319283f3b85a45a8b41f686823d07b57c56faa3f'>;
 export type ExecutionHash =
   ExecutionHashBase<'0e02fa5f2fc68ad5eddb3ed2c8ac22c13ff51db35c2ba14a11182b53470642b9'>;
 export type ProfileHash =
@@ -352,7 +352,8 @@ export namespace Models {
     track: FieldOutputTypes['public']['Course']['track'];
     updatedAt: FieldOutputTypes['public']['Course']['updatedAt'];
     modules: public_Module[];
-    readonly [RelationKeys]?: 'modules';
+    orders: public_Order[];
+    readonly [RelationKeys]?: 'modules' | 'orders';
   };
   export type public_Module = {
     accessDays: FieldOutputTypes['public']['Module']['accessDays'];
@@ -376,6 +377,7 @@ export namespace Models {
   };
   export type public_Order = {
     amount: FieldOutputTypes['public']['Order']['amount'];
+    courseId: FieldOutputTypes['public']['Order']['courseId'];
     createdAt: FieldOutputTypes['public']['Order']['createdAt'];
     currency: FieldOutputTypes['public']['Order']['currency'];
     id: FieldOutputTypes['public']['Order']['id'];
@@ -385,11 +387,12 @@ export namespace Models {
     status: FieldOutputTypes['public']['Order']['status'];
     updatedAt: FieldOutputTypes['public']['Order']['updatedAt'];
     userId: FieldOutputTypes['public']['Order']['userId'];
+    course: public_Course | null;
     module: public_Module | null;
     purchases: public_Purchase[];
     transactions: public_PaymentTransaction[];
     user: public_User;
-    readonly [RelationKeys]?: 'module' | 'purchases' | 'transactions' | 'user';
+    readonly [RelationKeys]?: 'course' | 'module' | 'purchases' | 'transactions' | 'user';
   };
   export type public_PaymentTransaction = {
     amount: FieldOutputTypes['public']['PaymentTransaction']['amount'];
@@ -792,6 +795,13 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly courseId: {
+                  readonly dataType: 'pg/char';
+                  readonly codecId: 'sql/char@1';
+                  readonly nullable: true;
+                  readonly typeParams: { readonly length: 24 };
+                  readonly many: false;
+                };
                 readonly createdAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-date@1';
@@ -863,6 +873,12 @@ type ContractBase = Omit<
               uniques: readonly [{ readonly columns: readonly ['reference'] }];
               indexes: readonly [
                 {
+                  readonly name: 'Order_courseId_idx_12f72d2a';
+                  readonly prefix: 'Order_courseId_idx';
+                  readonly columns: readonly ['courseId'];
+                  readonly unique: false;
+                },
+                {
                   readonly name: 'Order_moduleId_idx_04fe188b';
                   readonly prefix: 'Order_moduleId_idx';
                   readonly columns: readonly ['moduleId'];
@@ -897,6 +913,18 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'Module';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Order';
+                    readonly columns: readonly ['courseId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Course';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -1514,6 +1542,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['courseId'];
                 };
               };
+              readonly orders: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Order';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['courseId'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'Course';
@@ -1678,6 +1717,14 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly courseId: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'sql/char@1';
+                  readonly typeParams: { readonly length: 24 };
+                };
+              };
               readonly createdAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -1738,6 +1785,18 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly course: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Course';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['courseId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
               readonly module: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -1787,6 +1846,7 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly amount: { readonly column: 'amount' };
+                readonly courseId: { readonly column: 'courseId' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly currency: { readonly column: 'currency' };
                 readonly id: { readonly column: 'id' };

@@ -7,6 +7,7 @@ import { adminCourseService as courses } from "../../services/admin/course.servi
 import { adminOrderService as orders } from "../../services/admin/order.service.js";
 import { adminStatsService as stats } from "../../services/admin/stats.service.js";
 import { adminStudentService as students } from "../../services/admin/student.service.js";
+import { paymentService } from "../../services/payment.service.js";
 
 const router = Router();
 
@@ -65,8 +66,15 @@ router.post("/modules/:id/move", async (req, res) => {
 router.get("/students", async (req, res) => {
   res.json(await students.list(req.query));
 });
+router.post("/students", async (req, res) => {
+  res.status(201).json(await students.create(req.body, adminId(req)));
+});
 router.get("/students/:id", async (req, res) => {
   res.json({ student: await students.get(req.params.id) });
+});
+// Record a purchase for a student: one module or a whole course, paid offline or free.
+router.post("/students/:id/orders", async (req, res) => {
+  res.status(201).json({ order: await paymentService.recordManualOrder(adminId(req), req.params.id, req.body) });
 });
 router.patch("/students/:id", async (req, res) => {
   res.json({ student: await students.update(req.params.id, req.body, adminId(req)) });

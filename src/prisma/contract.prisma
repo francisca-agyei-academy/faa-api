@@ -128,6 +128,7 @@ model Course {
   sortOrder              Int     @default(0)
 
   modules                Module[]
+  orders                 Order[]
 
   +Timestamps
 
@@ -176,6 +177,9 @@ model Order {
   // The module being bought; access is granted for it once Paystack confirms payment
   moduleId  Cuid2?
   module    Module?     @relation(fields: [moduleId], references: [id], onDelete: Restrict)
+  // Set instead of moduleId for a full-course purchase: every module in the course is granted
+  courseId  Cuid2?
+  course    Course?     @relation(fields: [courseId], references: [id], onDelete: Restrict)
 
   purchases    Purchase[]
   transactions PaymentTransaction[]
