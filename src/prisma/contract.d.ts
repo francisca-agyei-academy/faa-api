@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'13e6a309f2cdd08a9e75d290ba3f7ee6ba6cf2b9c6aca39d0c984cd4d75366e4'>;
+  StorageHashBase<'07dae2b9ae99d2ddd9579bdd88d0885c6f28a307e2ae6dc5eb863b08de4765c0'>;
 export type ExecutionHash =
   ExecutionHashBase<'d020e3b143300dad4ebbb751135b6bb783f70d25778e295e0843b094cbda5dc6'>;
 export type ProfileHash =
@@ -475,6 +475,7 @@ export namespace Models {
     emailVerifiedAt: FieldOutputTypes['public']['User']['emailVerifiedAt'];
     firstName: FieldOutputTypes['public']['User']['firstName'];
     googleId: FieldOutputTypes['public']['User']['googleId'];
+    hasPassword: FieldOutputTypes['public']['User']['hasPassword'];
     id: FieldOutputTypes['public']['User']['id'];
     isActive: FieldOutputTypes['public']['User']['isActive'];
     isEmailVerified: FieldOutputTypes['public']['User']['isEmailVerified'];
@@ -1436,6 +1437,16 @@ type ContractBase = Omit<
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly hasPassword: {
+                  readonly dataType: 'pg/bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
+                  };
                   readonly many: false;
                 };
                 readonly id: {
@@ -2461,6 +2472,10 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly hasPassword: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
               readonly id: {
                 readonly nullable: false;
                 readonly type: {
@@ -2575,6 +2590,7 @@ type ContractBase = Omit<
                 readonly emailVerifiedAt: { readonly column: 'emailVerifiedAt' };
                 readonly firstName: { readonly column: 'firstName' };
                 readonly googleId: { readonly column: 'googleId' };
+                readonly hasPassword: { readonly column: 'hasPassword' };
                 readonly id: { readonly column: 'id' };
                 readonly isActive: { readonly column: 'isActive' };
                 readonly isEmailVerified: { readonly column: 'isEmailVerified' };

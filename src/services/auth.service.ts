@@ -20,7 +20,7 @@ import {
   type AuthTokenPayload,
   type PublicUser,
 } from "../types/auth.types.js";
-import { passwordChangedEmail, passwordResetEmail, verificationEmail } from "./email.templates.js";
+import { passwordChangedEmail, passwordResetEmail, passwordSetEmail, verificationEmail } from "./email.templates.js";
 import {
   createSession,
   revokeAllSessions,
@@ -49,6 +49,7 @@ const publicFields = [
   "phone",
   "role",
   "isEmailVerified",
+  "hasPassword",
   "createdAt",
 ] as const;
 
@@ -290,6 +291,7 @@ async function resetPassword(body: unknown): Promise<void> {
     passwordResetToken: null,
     passwordResetExpiry: null,
     tokenVersion: user.tokenVersion + 1,
+    hasPassword: true,
     // Clicking a link sent to the inbox proves the user owns it.
     isEmailVerified: true,
   });
@@ -298,32 +300,52 @@ async function resetPassword(body: unknown): Promise<void> {
   log.info({ event: "auth.password_reset", userId: user.id }, "password reset; all sessions revoked");
 }
 
-/** Keeps the current session, signs out every other one, and returns a fresh access token. */
-async function changePassword(userId: string, sessionId: string, body: unknown): Promise<{ accessToken: string }> {
+/**
+ * Changes the password, or sets the first one for an account made with Google (which has no
+ * current password to ask for). Keeps the current session, signs out every other one, and
+ * returns a fresh access token.
+ */
+async function changePassword(
+  userId: string,
+  sessionId: string,
+  body: unknown,
+): Promise<{ accessToken: string; user: PublicUser }> {
   const input = changePasswordSchema.parse(body);
 
   const user = await db.orm.public.User.where({ id: userId })
-    .select("id", "email", "firstName", "role", "password", "tokenVersion")
+    .select("id", "email", "firstName", "role", "password", "tokenVersion", "hasPassword")
     .first();
   if (!user) throw unauthorized("Account no longer exists");
-  if (!(await bcrypt.compare(input.currentPassword, user.password))) {
-    throw new AppError(400, "WRONG_PASSWORD", "Current password is incorrect");
-  }
-  if (input.currentPassword === input.newPassword) {
-    throw badRequest("New password must be different from the current one");
+  const settingFirst = !user.hasPassword;
+  if (!settingFirst) {
+    if (!input.currentPassword || !(await bcrypt.compare(input.currentPassword, user.password))) {
+      throw new AppError(400, "WRONG_PASSWORD", "Current password is incorrect");
+    }
+    if (input.currentPassword === input.newPassword) {
+      throw badRequest("New password must be different from the current one");
+    }
   }
 
   const tokenVersion = user.tokenVersion + 1;
-  await db.orm.public.User.where({ id: user.id }).update({
-    password: await bcrypt.hash(input.newPassword, BCRYPT_ROUNDS),
-    tokenVersion,
-    passwordResetToken: null,
-    passwordResetExpiry: null,
-  });
+  const updated = await db.orm.public.User.where({ id: user.id })
+    .select(...publicFields)
+    .update({
+      password: await bcrypt.hash(input.newPassword, BCRYPT_ROUNDS),
+      hasPassword: true,
+      tokenVersion,
+      passwordResetToken: null,
+      passwordResetExpiry: null,
+    });
+  if (!updated) throw unauthorized("Account no longer exists");
   await revokeAllSessions(user.id, sessionId);
-  sendEmailInBackground(passwordChangedEmail(user.email, user.firstName));
-  log.info({ event: "auth.password_changed", userId: user.id }, "password changed; other sessions revoked");
-  return { accessToken: signAccessToken(user, tokenVersion, sessionId) };
+  sendEmailInBackground(
+    settingFirst ? passwordSetEmail(user.email, user.firstName) : passwordChangedEmail(user.email, user.firstName),
+  );
+  log.info(
+    { event: settingFirst ? "auth.password_set" : "auth.password_changed", userId: user.id },
+    settingFirst ? "first password set; other sessions revoked" : "password changed; other sessions revoked",
+  );
+  return { accessToken: signAccessToken(user, tokenVersion, sessionId), user: updated };
 }
 
 /** Name and phone; the user is returned in the same shape as /auth/me. */
@@ -364,6 +386,8 @@ async function googleSignIn(profile: GoogleProfile, client: ClientInfo): Promise
         firstName: profile.firstName,
         lastName: profile.lastName,
         googleId: profile.sub,
+        // The stored hash is random; the user sets a real password from Account settings if they want one.
+        hasPassword: false,
         isEmailVerified: true,
         emailVerifiedAt: new Date(),
       });
@@ -385,6 +409,7 @@ async function googleSignIn(profile: GoogleProfile, client: ClientInfo): Promise
       emailVerificationExpiry: null,
       ...(takeOver && {
         password: await bcrypt.hash(randomBytes(32).toString("base64url"), BCRYPT_ROUNDS),
+        hasPassword: false,
         passwordResetToken: null,
         passwordResetExpiry: null,
         tokenVersion: account.tokenVersion + 1,
@@ -395,7 +420,12 @@ async function googleSignIn(profile: GoogleProfile, client: ClientInfo): Promise
       { event: "auth.google_linked", userId: account.id, passwordReset: takeOver, ip: client.ip },
       takeOver ? "google linked to unverified account; old password and sessions removed" : "google linked to account",
     );
-    account = { ...account, isEmailVerified: true, tokenVersion: account.tokenVersion + (takeOver ? 1 : 0) };
+    account = {
+      ...account,
+      isEmailVerified: true,
+      hasPassword: takeOver ? false : account.hasPassword,
+      tokenVersion: account.tokenVersion + (takeOver ? 1 : 0),
+    };
   }
 
   if (!account.isActive) {

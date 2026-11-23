@@ -1,0 +1,72 @@
+[
+  {
+    "id": "column.public.User.hasPassword",
+    "label": "Add column \"hasPassword\" to \"User\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "hasPassword",
+        "table": "User"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"hasPassword\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "User",
+          "hasPassword"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"hasPassword\" on \"User\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"hasPassword\"",
+        "sql": "ALTER TABLE \"public\".\"User\" ADD COLUMN \"hasPassword\" bool DEFAULT true NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"hasPassword\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "User",
+          "hasPassword"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"hasPassword\" on \"User\""
+        }
+      },
+      {
+        "description": "verify column \"hasPassword\" has type \"boolean\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "User",
+          "hasPassword",
+          "boolean"
+        ]
+      },
+      {
+        "description": "verify column \"hasPassword\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "User",
+          "hasPassword",
+          "NO"
+        ]
+      }
+    ]
+  }
+]

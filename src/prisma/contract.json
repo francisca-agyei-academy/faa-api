@@ -1445,6 +1445,13 @@
                   "kind": "scalar"
                 }
               },
+              "hasPassword": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -1621,6 +1628,9 @@
                 },
                 "googleId": {
                   "column": "googleId"
+                },
+                "hasPassword": {
+                  "column": "hasPassword"
                 },
                 "id": {
                   "column": "id"
@@ -2805,6 +2815,15 @@
                   "dataType": "pg/text",
                   "nullable": true
                 },
+                "hasPassword": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nullable": false
+                },
                 "id": {
                   "codecId": "sql/char@1",
                   "dataType": "pg/char",
@@ -2974,7 +2993,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "13e6a309f2cdd08a9e75d290ba3f7ee6ba6cf2b9c6aca39d0c984cd4d75366e4"
+    "storageHash": "07dae2b9ae99d2ddd9579bdd88d0885c6f28a307e2ae6dc5eb863b08de4765c0"
   },
   "execution": {
     "executionHash": "d020e3b143300dad4ebbb751135b6bb783f70d25778e295e0843b094cbda5dc6",

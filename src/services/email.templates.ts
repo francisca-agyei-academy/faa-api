@@ -84,6 +84,26 @@ export function passwordResetEmail(to: string, firstName: string, rawToken: stri
   };
 }
 
+export function passwordSetEmail(to: string, firstName: string): Email {
+  const name = escapeHtml(firstName);
+  return {
+    to,
+    subject: "You added a password to your account",
+    text: `Hi ${firstName},
+
+You can now log in with your email and password, as well as with Google.
+
+If this wasn't you, reset your password right away: ${env.APP_URL}/forgot-password`,
+    html: layout(
+      "You added a password",
+      `Hi ${name}, you can now log in with your email and password, as well as with Google.`,
+      "This wasn't me",
+      `${env.APP_URL}/forgot-password`,
+      "If you made this change, no action is needed.",
+    ),
+  };
+}
+
 export function passwordChangedEmail(to: string, firstName: string): Email {
   const name = escapeHtml(firstName);
   const text = `Hi ${firstName},\n\nYour password was just changed, and you've been signed out on your other devices.\n\nIf this wasn't you, reset your password right away: ${env.APP_URL}/forgot-password`;

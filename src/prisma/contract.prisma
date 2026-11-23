@@ -65,6 +65,8 @@ model User {
   passwordResetToken       String?    @unique
   passwordResetExpiry      Timestamp?
 
+  // False for an account made with Google until its owner sets a password (its stored hash is random)
+  hasPassword         Boolean    @default(true)
   // Google account id ("sub"), set once the user signs in with Google
   googleId            String?    @unique
 

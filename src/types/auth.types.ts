@@ -28,7 +28,8 @@ export const resetPasswordSchema = z.object({
 });
 
 export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1),
+  // Not asked for when an account made with Google sets its first password.
+  currentPassword: z.string().min(1).optional(),
   newPassword: passwordSchema,
 });
 
@@ -65,6 +66,8 @@ export interface PublicUser {
   phone: string | null;
   role: Role;
   isEmailVerified: boolean;
+  /** False for an account made with Google that hasn't set a password yet */
+  hasPassword: boolean;
   createdAt: Date;
 }
 
