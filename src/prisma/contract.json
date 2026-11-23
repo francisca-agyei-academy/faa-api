@@ -1438,6 +1438,13 @@
                   "kind": "scalar"
                 }
               },
+              "googleId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -1611,6 +1618,9 @@
                 },
                 "firstName": {
                   "column": "firstName"
+                },
+                "googleId": {
+                  "column": "googleId"
                 },
                 "id": {
                   "column": "id"
@@ -2790,6 +2800,11 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
+                "googleId": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "sql/char@1",
                   "dataType": "pg/char",
@@ -2918,6 +2933,11 @@
                   "columns": [
                     "passwordResetToken"
                   ]
+                },
+                {
+                  "columns": [
+                    "googleId"
+                  ]
                 }
               ]
             }
@@ -2954,7 +2974,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "2bf6d918ae11a95efb966af76b7f97d693b99de0aae29350d7646cc13870fc23"
+    "storageHash": "13e6a309f2cdd08a9e75d290ba3f7ee6ba6cf2b9c6aca39d0c984cd4d75366e4"
   },
   "execution": {
     "executionHash": "d020e3b143300dad4ebbb751135b6bb783f70d25778e295e0843b094cbda5dc6",

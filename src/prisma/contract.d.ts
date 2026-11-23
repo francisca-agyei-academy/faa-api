@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'2bf6d918ae11a95efb966af76b7f97d693b99de0aae29350d7646cc13870fc23'>;
+  StorageHashBase<'13e6a309f2cdd08a9e75d290ba3f7ee6ba6cf2b9c6aca39d0c984cd4d75366e4'>;
 export type ExecutionHash =
   ExecutionHashBase<'d020e3b143300dad4ebbb751135b6bb783f70d25778e295e0843b094cbda5dc6'>;
 export type ProfileHash =
@@ -474,6 +474,7 @@ export namespace Models {
     emailVerificationToken: FieldOutputTypes['public']['User']['emailVerificationToken'];
     emailVerifiedAt: FieldOutputTypes['public']['User']['emailVerifiedAt'];
     firstName: FieldOutputTypes['public']['User']['firstName'];
+    googleId: FieldOutputTypes['public']['User']['googleId'];
     id: FieldOutputTypes['public']['User']['id'];
     isActive: FieldOutputTypes['public']['User']['isActive'];
     isEmailVerified: FieldOutputTypes['public']['User']['isEmailVerified'];
@@ -1431,6 +1432,12 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly googleId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
                 readonly id: {
                   readonly dataType: 'pg/char';
                   readonly codecId: 'sql/char@1';
@@ -1534,6 +1541,7 @@ type ContractBase = Omit<
                 { readonly columns: readonly ['email'] },
                 { readonly columns: readonly ['emailVerificationToken'] },
                 { readonly columns: readonly ['passwordResetToken'] },
+                { readonly columns: readonly ['googleId'] },
               ];
               indexes: readonly [
                 {
@@ -2449,6 +2457,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly googleId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly id: {
                 readonly nullable: false;
                 readonly type: {
@@ -2562,6 +2574,7 @@ type ContractBase = Omit<
                 readonly emailVerificationToken: { readonly column: 'emailVerificationToken' };
                 readonly emailVerifiedAt: { readonly column: 'emailVerifiedAt' };
                 readonly firstName: { readonly column: 'firstName' };
+                readonly googleId: { readonly column: 'googleId' };
                 readonly id: { readonly column: 'id' };
                 readonly isActive: { readonly column: 'isActive' };
                 readonly isEmailVerified: { readonly column: 'isEmailVerified' };

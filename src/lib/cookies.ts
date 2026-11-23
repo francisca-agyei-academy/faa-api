@@ -37,3 +37,33 @@ export function readRefreshCookie(req: Request): string | undefined {
   const value: unknown = req.cookies?.[REFRESH_COOKIE];
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
+
+/* ───────── Google sign-in attempt ───────── */
+
+const OAUTH_COOKIE = "faa_google";
+// Lax, whatever COOKIE_SAMESITE says: the browser must send it on the redirect back from Google.
+const oauthOptions: CookieOptions = { ...shared, sameSite: "lax", path: "/api/v1/auth/google" };
+
+export interface OAuthAttempt {
+  state: string;
+  verifier: string;
+  next: string | null;
+}
+
+/** Holds the state and PKCE verifier for the 10 minutes a Google sign-in may take. */
+export function setOAuthCookie(res: Response, attempt: OAuthAttempt) {
+  res.cookie(OAUTH_COOKIE, JSON.stringify(attempt), { ...oauthOptions, maxAge: 10 * 60 * 1000 });
+}
+
+export function takeOAuthCookie(req: Request, res: Response): OAuthAttempt | null {
+  res.clearCookie(OAUTH_COOKIE, oauthOptions);
+  const value: unknown = req.cookies?.[OAUTH_COOKIE];
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = JSON.parse(value) as Partial<OAuthAttempt>;
+    if (typeof parsed.state !== "string" || typeof parsed.verifier !== "string") return null;
+    return { state: parsed.state, verifier: parsed.verifier, next: typeof parsed.next === "string" ? parsed.next : null };
+  } catch {
+    return null;
+  }
+}

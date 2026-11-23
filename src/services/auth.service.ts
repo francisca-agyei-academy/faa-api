@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import bcrypt from "bcrypt";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { env } from "../config/env.js";
@@ -5,6 +6,7 @@ import { db } from "../lib/db.js";
 import { AppError, badRequest, conflict, isUniqueViolation, unauthorized } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
 import { sendEmailInBackground } from "../lib/mailer.js";
+import type { GoogleProfile } from "../lib/google.js";
 import { createEmailToken, hashToken } from "../lib/tokens.js";
 import {
   changePasswordSchema,
@@ -333,7 +335,82 @@ async function updateProfile(userId: string, body: unknown): Promise<PublicUser>
   return user;
 }
 
+/**
+ * Signs in with a Google identity, creating the account on first use.
+ *
+ * Accounts are matched by Google id, then by email. Matching by email links Google to an existing
+ * password account. If that account's email was never confirmed, whoever chose its password may not
+ * own the address (someone can register with another person's email), so the password is replaced
+ * and every session ended: the Google sign-in proves who owns the email.
+ */
+async function googleSignIn(profile: GoogleProfile, client: ClientInfo): Promise<AuthResult> {
+  const fields = [...publicFields, "isActive", "tokenVersion", "googleId"] as const;
+  let account =
+    (await db.orm.public.User.where({ googleId: profile.sub }).select(...fields).first()) ??
+    (await db.orm.public.User.where({ email: profile.email }).select(...fields).first());
+
+  if (account && account.googleId && account.googleId !== profile.sub) {
+    // The email belongs to an account already tied to a different Google account.
+    log.warn({ event: "auth.google_conflict", userId: account.id, ip: client.ip }, "google sign-in: email linked to another Google account");
+    throw new AppError(409, "GOOGLE_ACCOUNT_CONFLICT", "This email is linked to a different Google account.");
+  }
+
+  if (!account) {
+    const password = await bcrypt.hash(randomBytes(32).toString("base64url"), BCRYPT_ROUNDS);
+    try {
+      const created = await db.orm.public.User.select(...fields).create({
+        email: profile.email,
+        password,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        googleId: profile.sub,
+        isEmailVerified: true,
+        emailVerifiedAt: new Date(),
+      });
+      account = created;
+      log.info({ event: "auth.register", method: "google", userId: created.id, ip: client.ip }, "account created with Google");
+    } catch (err) {
+      if (!isUniqueViolation(err)) throw err;
+      // Two first sign-ins raced; the other one created it.
+      account = await db.orm.public.User.where({ googleId: profile.sub }).select(...fields).first();
+      if (!account) throw err;
+    }
+  } else if (!account.googleId) {
+    const takeOver = !account.isEmailVerified;
+    await db.orm.public.User.where({ id: account.id }).update({
+      googleId: profile.sub,
+      isEmailVerified: true,
+      emailVerifiedAt: new Date(),
+      emailVerificationToken: null,
+      emailVerificationExpiry: null,
+      ...(takeOver && {
+        password: await bcrypt.hash(randomBytes(32).toString("base64url"), BCRYPT_ROUNDS),
+        passwordResetToken: null,
+        passwordResetExpiry: null,
+        tokenVersion: account.tokenVersion + 1,
+      }),
+    });
+    if (takeOver) await revokeAllSessions(account.id);
+    log.info(
+      { event: "auth.google_linked", userId: account.id, passwordReset: takeOver, ip: client.ip },
+      takeOver ? "google linked to unverified account; old password and sessions removed" : "google linked to account",
+    );
+    account = { ...account, isEmailVerified: true, tokenVersion: account.tokenVersion + (takeOver ? 1 : 0) };
+  }
+
+  if (!account.isActive) {
+    log.warn({ event: "auth.login_blocked", method: "google", userId: account.id, ip: client.ip }, "login blocked: account disabled");
+    throw new AppError(403, "ACCOUNT_DISABLED", "This account has been disabled");
+  }
+
+  await db.orm.public.User.where({ id: account.id }).update({ lastLoginAt: new Date(), lastLoginIp: client.ip ?? null });
+  const { isActive: _isActive, tokenVersion, googleId: _googleId, ...user } = account;
+  log.info({ event: "auth.login", method: "google", userId: user.id, ip: client.ip }, "logged in with Google");
+  return startSession(user, tokenVersion, client);
+}
+
 export const authService = {
+  googleSignIn,
   updateProfile,
   register,
   login,

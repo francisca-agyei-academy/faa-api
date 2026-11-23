@@ -1,5 +1,16 @@
+import { timingSafeEqual } from "node:crypto";
 import { Router, type Request, type Response } from "express";
-import { clearRefreshCookie, readRefreshCookie, setRefreshCookie } from "../../lib/cookies.js";
+import { env, googleConfigured } from "../../config/env.js";
+import {
+  clearRefreshCookie,
+  readRefreshCookie,
+  setOAuthCookie,
+  setRefreshCookie,
+  takeOAuthCookie,
+} from "../../lib/cookies.js";
+import { AppError } from "../../lib/errors.js";
+import { authorizationUrl, exchangeCode, GoogleAuthError, newAuthAttempt } from "../../lib/google.js";
+import { logger } from "../../lib/logger.js";
 import { bearerToken, requireAuth } from "../../middleware/auth.middleware.js";
 import {
   emailLimiter,
@@ -91,6 +102,60 @@ router.post("/reset-password", tokenLimiter, async (req, res) => {
 router.post("/change-password", requireAuth, async (req, res) => {
   const result = await authService.changePassword(req.auth!.userId, req.auth!.sessionId, req.body);
   res.json({ message: "Password changed. Other sessions have been signed out.", ...result });
+});
+
+/* ───────── Continue with Google ───────── */
+
+const log = logger.child({ module: "auth" });
+
+/** Only paths on the website, so ?next= can't send someone to another site. */
+const safeNext = (next: unknown) =>
+  typeof next === "string" && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : null;
+
+/** Back to the website's login page with a short error code it turns into a message. */
+const toLogin = (res: Response, error: string) => res.redirect(`${env.APP_URL}/login?error=${error}`);
+
+router.get("/google", (req, res) => {
+  if (!googleConfigured) return toLogin(res, "google_unavailable");
+  const { state, verifier, challenge } = newAuthAttempt();
+  setOAuthCookie(res, { state, verifier, next: safeNext(req.query["next"]) });
+  res.redirect(authorizationUrl(state, challenge));
+});
+
+router.get("/google/callback", loginLimiter, async (req, res) => {
+  const attempt = takeOAuthCookie(req, res);
+  if (!googleConfigured) return toLogin(res, "google_unavailable");
+  // e.g. access_denied when the user backs out on Google's page.
+  if (req.query["error"]) return toLogin(res, "google_cancelled");
+
+  const state = typeof req.query["state"] === "string" ? req.query["state"] : "";
+  const code = typeof req.query["code"] === "string" ? req.query["code"] : "";
+  const stateOk =
+    attempt !== null &&
+    state.length === attempt.state.length &&
+    timingSafeEqual(Buffer.from(state), Buffer.from(attempt.state));
+  // No cookie or a different state: the attempt expired, or this request wasn't started by this browser.
+  if (!stateOk || !code) {
+    log.warn({ event: "auth.google_bad_state", ip: req.ip, hasAttempt: attempt !== null }, "google callback rejected: state mismatch");
+    return toLogin(res, "google_expired");
+  }
+
+  try {
+    const profile = await exchangeCode(code, attempt.verifier);
+    const result = await authService.googleSignIn(profile, clientInfo(req));
+    if (result.refreshToken) setRefreshCookie(res, result.refreshToken, result.user.role);
+    const home = result.user.role === "ADMIN" ? "/admin" : "/dashboard";
+    res.redirect(`${env.APP_URL}${attempt.next ?? home}`);
+  } catch (err) {
+    if (err instanceof GoogleAuthError) {
+      log.warn({ event: "auth.google_failed", reason: err.message, ip: req.ip }, "google sign-in failed");
+      return toLogin(res, err.code);
+    }
+    if (err instanceof AppError && err.code === "ACCOUNT_DISABLED") return toLogin(res, "account_disabled");
+    if (err instanceof AppError && err.code === "GOOGLE_ACCOUNT_CONFLICT") return toLogin(res, "google_conflict");
+    log.error({ err, ip: req.ip }, "google sign-in failed");
+    toLogin(res, "google_failed");
+  }
 });
 
 export default router;

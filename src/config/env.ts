@@ -51,6 +51,13 @@ const envSchema = z.object({
   GMAIL_APP_PASSWORD: optional(z.string().transform((value) => value.replace(/\s+/g, ""))),
   EMAIL_FROM: optional(z.string()),
 
+  // "Continue with Google". Off until both are set (Google Cloud > APIs & Services > Credentials).
+  GOOGLE_CLIENT_ID: optional(z.string().endsWith(".apps.googleusercontent.com")),
+  GOOGLE_CLIENT_SECRET: optional(z.string()),
+  // Where Google sends the user back; must be listed in the Google client's "Authorized redirect URIs".
+  // Defaults to this API on localhost, or APP_URL in production (Vercel forwards /api/v1 here).
+  GOOGLE_REDIRECT_URI: optional(z.url()),
+
   // Paystack. The secret key stays on the server; test keys start with sk_test_.
   PAYSTACK_SECRET_KEY: optional(z.string().startsWith("sk_")),
   PAYSTACK_PUBLIC_KEY: optional(z.string().startsWith("pk_")),
@@ -92,6 +99,10 @@ if (!parsed.success) {
 export const env = parsed.data;
 export const isProduction = env.NODE_ENV === "production";
 export const docsEnabled = env.ENABLE_DOCS ?? !isProduction;
+export const googleConfigured = Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
+export const googleRedirectUri =
+  env.GOOGLE_REDIRECT_URI ??
+  (isProduction ? `${env.APP_URL}/api/v1/auth/google/callback` : `http://localhost:${env.PORT}/api/v1/auth/google/callback`);
 export const r2Configured = Boolean(
   env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && env.R2_BUCKET && env.R2_PUBLIC_URL,
 );
