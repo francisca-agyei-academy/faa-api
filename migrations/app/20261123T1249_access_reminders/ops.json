@@ -1,0 +1,122 @@
+[
+  {
+    "id": "column.public.Purchase.endedNoticeSentAt",
+    "label": "Add column \"endedNoticeSentAt\" to \"Purchase\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "endedNoticeSentAt",
+        "table": "Purchase"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"endedNoticeSentAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Purchase",
+          "endedNoticeSentAt"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"endedNoticeSentAt\" on \"Purchase\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"endedNoticeSentAt\"",
+        "sql": "ALTER TABLE \"public\".\"Purchase\" ADD COLUMN \"endedNoticeSentAt\" timestamptz(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"endedNoticeSentAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Purchase",
+          "endedNoticeSentAt"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"endedNoticeSentAt\" on \"Purchase\""
+        }
+      },
+      {
+        "description": "verify column \"endedNoticeSentAt\" has type \"timestamp(3) with time zone\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Purchase",
+          "endedNoticeSentAt",
+          "timestamp(3) with time zone"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Purchase.reminderSentAt",
+    "label": "Add column \"reminderSentAt\" to \"Purchase\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "reminderSentAt",
+        "table": "Purchase"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"reminderSentAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Purchase",
+          "reminderSentAt"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"reminderSentAt\" on \"Purchase\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"reminderSentAt\"",
+        "sql": "ALTER TABLE \"public\".\"Purchase\" ADD COLUMN \"reminderSentAt\" timestamptz(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"reminderSentAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Purchase",
+          "reminderSentAt"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"reminderSentAt\" on \"Purchase\""
+        }
+      },
+      {
+        "description": "verify column \"reminderSentAt\" has type \"timestamp(3) with time zone\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Purchase",
+          "reminderSentAt",
+          "timestamp(3) with time zone"
+        ]
+      }
+    ]
+  }
+]

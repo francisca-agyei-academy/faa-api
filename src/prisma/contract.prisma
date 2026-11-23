@@ -213,6 +213,9 @@ model Purchase {
   orderId   Cuid2
   order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   expiresAt Timestamp
+  // Reminder emails; cleared whenever access is renewed so the new period gets its own
+  reminderSentAt    Timestamp?
+  endedNoticeSentAt Timestamp?
   createdAt temporal.CreatedAtJsDate
 
   @@unique([userId, moduleId])

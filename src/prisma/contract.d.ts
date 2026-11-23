@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'07dae2b9ae99d2ddd9579bdd88d0885c6f28a307e2ae6dc5eb863b08de4765c0'>;
+  StorageHashBase<'5079eb1fea6769f054eb103e48b78d39eab703e25b020b973e09e75b3716b761'>;
 export type ExecutionHash =
   ExecutionHashBase<'d020e3b143300dad4ebbb751135b6bb783f70d25778e295e0843b094cbda5dc6'>;
 export type ProfileHash =
@@ -443,10 +443,12 @@ export namespace Models {
   };
   export type public_Purchase = {
     createdAt: FieldOutputTypes['public']['Purchase']['createdAt'];
+    endedNoticeSentAt: FieldOutputTypes['public']['Purchase']['endedNoticeSentAt'];
     expiresAt: FieldOutputTypes['public']['Purchase']['expiresAt'];
     id: FieldOutputTypes['public']['Purchase']['id'];
     moduleId: FieldOutputTypes['public']['Purchase']['moduleId'];
     orderId: FieldOutputTypes['public']['Purchase']['orderId'];
+    reminderSentAt: FieldOutputTypes['public']['Purchase']['reminderSentAt'];
     userId: FieldOutputTypes['public']['Purchase']['userId'];
     module: public_Module;
     order: public_Order;
@@ -1200,6 +1202,13 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly endedNoticeSentAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: true;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
                 readonly expiresAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-date@1';
@@ -1226,6 +1235,13 @@ type ContractBase = Omit<
                   readonly codecId: 'sql/char@1';
                   readonly nullable: false;
                   readonly typeParams: { readonly length: 24 };
+                  readonly many: false;
+                };
+                readonly reminderSentAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: true;
+                  readonly typeParams: { readonly precision: 3 };
                   readonly many: false;
                 };
                 readonly userId: {
@@ -2248,6 +2264,14 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-date@1';
                 };
               };
+              readonly endedNoticeSentAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
               readonly expiresAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -2278,6 +2302,14 @@ type ContractBase = Omit<
                   readonly kind: 'scalar';
                   readonly codecId: 'sql/char@1';
                   readonly typeParams: { readonly length: 24 };
+                };
+              };
+              readonly reminderSentAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
                 };
               };
               readonly userId: {
@@ -2329,10 +2361,12 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly createdAt: { readonly column: 'createdAt' };
+                readonly endedNoticeSentAt: { readonly column: 'endedNoticeSentAt' };
                 readonly expiresAt: { readonly column: 'expiresAt' };
                 readonly id: { readonly column: 'id' };
                 readonly moduleId: { readonly column: 'moduleId' };
                 readonly orderId: { readonly column: 'orderId' };
+                readonly reminderSentAt: { readonly column: 'reminderSentAt' };
                 readonly userId: { readonly column: 'userId' };
               };
             };

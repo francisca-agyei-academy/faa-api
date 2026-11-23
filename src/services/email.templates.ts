@@ -212,3 +212,91 @@ export function receiptEmail(r: Receipt): Email {
 
   return { to: r.to, subject: `Your Gradvane Global receipt (${r.reference})`, text, html };
 }
+
+export interface AccessItem {
+  moduleTitle: string;
+  courseTitle: string;
+  expiresAt: Date;
+  /** Website path of the module's card on its course page */
+  renewPath: string;
+}
+
+/** One email for all of a student's modules in the same state, each with its own renew link. */
+function accessEmail(
+  to: string,
+  firstName: string,
+  items: AccessItem[],
+  copy: { subject: string; heading: string; intro: string; when: (item: AccessItem) => string; footer: string },
+): Email {
+  const myCourses = `${env.APP_URL}/my-courses`;
+  const rows = items
+    .map(
+      (item) => `<tr>
+        <td style="padding:12px 0;border-top:1px solid #e4e3ef;vertical-align:top">
+          <div style="font-size:15px;font-weight:600">${escapeHtml(item.moduleTitle)}</div>
+          <div style="font-size:13px;color:#4e4d6b;margin-top:2px">${escapeHtml(item.courseTitle)} &middot; ${copy.when(item)}</div>
+        </td>
+        <td style="padding:12px 0 12px 12px;border-top:1px solid #e4e3ef;text-align:right;vertical-align:middle;white-space:nowrap">
+          <a href="${env.APP_URL}${item.renewPath}" style="display:inline-block;background:#2b2a6e;color:#ffffff;text-decoration:none;padding:8px 14px;border-radius:6px;font-size:14px">Renew</a>
+        </td>
+      </tr>`,
+    )
+    .join("");
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:24px;background:#f4f3fa;font-family:Arial,sans-serif;color:#17163a">
+  ${brandHeader()}
+  <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px">
+    <h1 style="font-size:20px;margin:0 0 8px">${copy.heading}</h1>
+    <p style="font-size:15px;line-height:1.5;margin:0 0 20px">Hi ${escapeHtml(firstName)}, ${copy.intro}</p>
+    <table role="presentation" style="width:100%;border-collapse:collapse;margin:0 0 24px">${rows}</table>
+    <a href="${myCourses}" style="color:#2b2a6e;font-size:14px;font-weight:600">Go to my courses</a>
+    <p style="font-size:13px;line-height:1.5;color:#4e4d6b;margin:24px 0 0">${copy.footer}</p>
+  </div>
+</body></html>`;
+
+  const text = [
+    `Hi ${firstName},`,
+    "",
+    copy.intro.charAt(0).toUpperCase() + copy.intro.slice(1),
+    "",
+    ...items.flatMap((item) => [
+      `- ${item.moduleTitle} (${item.courseTitle}), ${copy.when(item)}`,
+      `  Renew: ${env.APP_URL}${item.renewPath}`,
+    ]),
+    "",
+    `My courses: ${myCourses}`,
+    "",
+    copy.footer,
+  ].join("\n");
+
+  return { to, subject: copy.subject, text, html };
+}
+
+/** Sent about 7 days before access ends. */
+export function accessEndingEmail(to: string, firstName: string, items: AccessItem[]): Email {
+  const one = items.length === 1;
+  return accessEmail(to, firstName, items, {
+    subject: one ? `Your access to ${items[0]!.moduleTitle} ends soon` : "Your access to some modules ends soon",
+    heading: one ? "Your access ends soon" : "Some of your access ends soon",
+    intro: one
+      ? "your access to this module ends in the next few days. Renew it to keep going without a break."
+      : "your access to these modules ends in the next few days. Renew them to keep going without a break.",
+    when: (item) => `ends ${formatReceiptDate(item.expiresAt)}`,
+    footer: "Renewing early doesn't lose any days: the new access period starts when the current one ends.",
+  });
+}
+
+/** Sent when access has just ended. */
+export function accessEndedEmail(to: string, firstName: string, items: AccessItem[]): Email {
+  const one = items.length === 1;
+  return accessEmail(to, firstName, items, {
+    subject: one ? `Your access to ${items[0]!.moduleTitle} has ended` : "Your access to some modules has ended",
+    heading: "Your access has ended",
+    intro: one
+      ? "your access to this module has ended. Renew it any time to pick up where you left off."
+      : "your access to these modules has ended. Renew them any time to pick up where you left off.",
+    when: (item) => `ended ${formatReceiptDate(item.expiresAt)}`,
+    footer: "Renewing gives you a full new access period from the day you renew.",
+  });
+}

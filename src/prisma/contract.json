@@ -1119,6 +1119,16 @@
                   "kind": "scalar"
                 }
               },
+              "endedNoticeSentAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
               "expiresAt": {
                 "nullable": false,
                 "type": {
@@ -1156,6 +1166,16 @@
                   "kind": "scalar",
                   "typeParams": {
                     "length": 24
+                  }
+                }
+              },
+              "reminderSentAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
                   }
                 }
               },
@@ -1225,6 +1245,9 @@
                 "createdAt": {
                   "column": "createdAt"
                 },
+                "endedNoticeSentAt": {
+                  "column": "endedNoticeSentAt"
+                },
                 "expiresAt": {
                   "column": "expiresAt"
                 },
@@ -1236,6 +1259,9 @@
                 },
                 "orderId": {
                   "column": "orderId"
+                },
+                "reminderSentAt": {
+                  "column": "reminderSentAt"
                 },
                 "userId": {
                   "column": "userId"
@@ -2504,6 +2530,14 @@
                   "dataType": "pg/timestamptz",
                   "nullable": false
                 },
+                "endedNoticeSentAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
                 "expiresAt": {
                   "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
@@ -2534,6 +2568,14 @@
                   "nullable": false,
                   "typeParams": {
                     "length": 24
+                  }
+                },
+                "reminderSentAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
                   }
                 },
                 "userId": {
@@ -2993,7 +3035,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "07dae2b9ae99d2ddd9579bdd88d0885c6f28a307e2ae6dc5eb863b08de4765c0"
+    "storageHash": "5079eb1fea6769f054eb103e48b78d39eab703e25b020b973e09e75b3716b761"
   },
   "execution": {
     "executionHash": "d020e3b143300dad4ebbb751135b6bb783f70d25778e295e0843b094cbda5dc6",

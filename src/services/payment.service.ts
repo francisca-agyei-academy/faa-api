@@ -147,7 +147,13 @@ async function grantModule(
   const start = active ? current.expiresAt : paidAt;
   const expiresAt = new Date(start.getTime() + days * DAY_MS);
   if (current) {
-    await t.orm.public.Purchase.where({ id: current.id }).update({ expiresAt, orderId: order.id });
+    // A new access period: its 7-day and ended reminders haven't been sent yet.
+    await t.orm.public.Purchase.where({ id: current.id }).update({
+      expiresAt,
+      orderId: order.id,
+      reminderSentAt: null,
+      endedNoticeSentAt: null,
+    });
   } else {
     await t.orm.public.Purchase.create({ userId: order.userId, moduleId, orderId: order.id, expiresAt });
   }
@@ -312,7 +318,32 @@ async function verifyForUser(userId: string, reference: string) {
   return { status: result.status, module, course };
 }
 
-/** The student's modules, newest first, with whether access is still active. */
+/**
+ * Each module's number on its course page (1, 2, 3… among published modules), which is the
+ * page's #module-N anchor.
+ */
+export async function modulePositions(courseIds: string[]) {
+  const positions = new Map<string, number>();
+  if (!courseIds.length) return positions;
+  const modules = await db.orm.public.Module.where((m) => m.courseId.in([...new Set(courseIds)]))
+    .where({ isPublished: true })
+    .select("id", "courseId", "order")
+    .orderBy((m) => m.order.asc())
+    .all();
+  const counts = new Map<string, number>();
+  for (const m of modules) {
+    const n = (counts.get(m.courseId) ?? 0) + 1;
+    counts.set(m.courseId, n);
+    positions.set(m.id, n);
+  }
+  return positions;
+}
+
+/** The module's card on its course page, where it can be bought or renewed. */
+export const renewPath = (courseSlug: string, position: number | undefined) =>
+  `/courses/${courseSlug}${position ? `#module-${position}` : ""}`;
+
+/** The student's modules, newest first, with whether access is still active and where to renew. */
 async function myPurchases(userId: string) {
   const purchases = await db.orm.public.Purchase.where({ userId })
     .select("id", "expiresAt", "createdAt")
@@ -324,22 +355,36 @@ async function myPurchases(userId: string) {
     .orderBy((p) => p.createdAt.desc())
     .all();
   const now = new Date();
-  return purchases.map((p) => ({ ...p, isActive: p.expiresAt > now }));
+  const positions = await modulePositions(purchases.flatMap((p) => (p.module?.course ? [p.module.course.id] : [])));
+  return purchases.map((p) => ({
+    ...p,
+    isActive: p.expiresAt > now,
+    renewPath: p.module?.course ? renewPath(p.module.course.slug, positions.get(p.module.id)) : "/courses",
+  }));
 }
 
 /** A purchased module's content link. Admins can open any module. */
 async function moduleContent(userId: string, role: string, moduleId: string) {
   const module = await db.orm.public.Module.where({ id: moduleId })
     .select("id", "title", "description", "topics", "contentUrl", "previewUrl")
-    .include("course", (course) => course.select("slug", "title"))
+    .include("course", (course) => course.select("id", "slug", "title"))
     .first();
   if (!module) throw notFound("Module not found");
 
   if (role !== "ADMIN") {
     const purchase = await db.orm.public.Purchase.where({ userId, moduleId }).select("expiresAt").first();
-    if (!purchase) throw new AppError(403, "NOT_PURCHASED", "Buy this module to open it.");
-    if (purchase.expiresAt <= new Date()) {
-      throw new AppError(403, "ACCESS_EXPIRED", "Your access to this module has ended. Buy it again to continue.");
+    if (!purchase || purchase.expiresAt <= new Date()) {
+      // Tells the page where to send the student to buy or renew this module.
+      const details = module.course
+        ? { renewPath: renewPath(module.course.slug, (await modulePositions([module.course.id])).get(module.id)) }
+        : undefined;
+      if (!purchase) throw new AppError(403, "NOT_PURCHASED", "Buy this module to open it.", details);
+      throw new AppError(
+        403,
+        "ACCESS_EXPIRED",
+        `Your access to this module ended on ${formatReceiptDate(purchase.expiresAt)}. Renew it to continue.`,
+        details,
+      );
     }
     return { ...module, expiresAt: purchase.expiresAt };
   }
