@@ -1,0 +1,338 @@
+[
+  {
+    "id": "table.LessonProgress",
+    "label": "Create table \"LessonProgress\"",
+    "summary": "Creates table \"LessonProgress\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "LessonProgress"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"LessonProgress\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"LessonProgress\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"LessonProgress\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"LessonProgress\"",
+        "sql": "CREATE TABLE \"public\".\"LessonProgress\" (\n  \"completedAt\" timestamptz(3) NOT NULL,\n  \"id\" character(24) NOT NULL,\n  \"lessonId\" character(24) NOT NULL,\n  \"userId\" character(24) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"LessonProgress\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"public\".\"LessonProgress\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"LessonProgress\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "unique.LessonProgress.LessonProgress_userId_lessonId_key",
+    "label": "Add unique constraint on \"LessonProgress\" (userId, lessonId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "LessonProgress_userId_lessonId_key",
+        "table": "LessonProgress"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"LessonProgress_userId_lessonId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "LessonProgress_userId_lessonId_key",
+          "public",
+          "\"public\".\"LessonProgress\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"LessonProgress_userId_lessonId_key\" on \"LessonProgress\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"LessonProgress_userId_lessonId_key\"",
+        "sql": "ALTER TABLE \"public\".\"LessonProgress\" ADD CONSTRAINT \"LessonProgress_userId_lessonId_key\" UNIQUE (\"userId\", \"lessonId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"LessonProgress_userId_lessonId_key\" exists on (userId, lessonId)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "LessonProgress_userId_lessonId_key",
+          "public",
+          "\"public\".\"LessonProgress\"",
+          "u",
+          "[\"userId\",\"lessonId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.LessonProgress.LessonProgress_lessonId_idx_e358970d",
+    "label": "Create index \"LessonProgress_lessonId_idx_e358970d\" on \"LessonProgress\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "LessonProgress_lessonId_idx_e358970d",
+        "table": "LessonProgress"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"LessonProgress_lessonId_idx_e358970d\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"LessonProgress_lessonId_idx_e358970d\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"LessonProgress_lessonId_idx_e358970d\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"LessonProgress_lessonId_idx_e358970d\"",
+        "sql": "CREATE INDEX \"LessonProgress_lessonId_idx_e358970d\" ON \"public\".\"LessonProgress\" (\"lessonId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"LessonProgress_lessonId_idx_e358970d\" exists on \"LessonProgress\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"LessonProgress_lessonId_idx_e358970d\"",
+          "i",
+          "I",
+          "\"public\".\"LessonProgress\"",
+          "btree",
+          "[\"lessonId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.LessonProgress.LessonProgress_userId_idx_a489d58a",
+    "label": "Create index \"LessonProgress_userId_idx_a489d58a\" on \"LessonProgress\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "LessonProgress_userId_idx_a489d58a",
+        "table": "LessonProgress"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"LessonProgress_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"LessonProgress_userId_idx_a489d58a\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"LessonProgress_userId_idx_a489d58a\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"LessonProgress_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"LessonProgress_userId_idx_a489d58a\" ON \"public\".\"LessonProgress\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"LessonProgress_userId_idx_a489d58a\" exists on \"LessonProgress\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"LessonProgress_userId_idx_a489d58a\"",
+          "i",
+          "I",
+          "\"public\".\"LessonProgress\"",
+          "btree",
+          "[\"userId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.LessonProgress.LessonProgress_userId_fkey",
+    "label": "Add foreign key \"LessonProgress_userId_fkey\" on \"LessonProgress\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "LessonProgress_userId_fkey",
+        "table": "LessonProgress"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"LessonProgress_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "LessonProgress_userId_fkey",
+          "public",
+          "\"public\".\"LessonProgress\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"LessonProgress_userId_fkey\" on \"LessonProgress\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"LessonProgress_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"LessonProgress\"\nADD CONSTRAINT \"LessonProgress_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"User\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"LessonProgress_userId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "LessonProgress_userId_fkey",
+          "public",
+          "\"public\".\"LessonProgress\"",
+          "f",
+          "[\"userId\"]",
+          "\"public\".\"User\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.LessonProgress.LessonProgress_lessonId_fkey",
+    "label": "Add foreign key \"LessonProgress_lessonId_fkey\" on \"LessonProgress\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "LessonProgress_lessonId_fkey",
+        "table": "LessonProgress"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"LessonProgress_lessonId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "LessonProgress_lessonId_fkey",
+          "public",
+          "\"public\".\"LessonProgress\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"LessonProgress_lessonId_fkey\" on \"LessonProgress\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"LessonProgress_lessonId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"LessonProgress\"\nADD CONSTRAINT \"LessonProgress_lessonId_fkey\"\nFOREIGN KEY (\"lessonId\")\nREFERENCES \"public\".\"Lesson\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"LessonProgress_lessonId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "LessonProgress_lessonId_fkey",
+          "public",
+          "\"public\".\"LessonProgress\"",
+          "f",
+          "[\"lessonId\"]",
+          "\"public\".\"Lesson\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rowLevelSecurity.public.LessonProgress",
+    "label": "Enable row-level security on \"LessonProgress\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "rowLevelSecurity",
+        "name": "LessonProgress"
+      }
+    },
+    "precheck": [
+      {
+        "description": "check RLS is not already enabled on \"LessonProgress\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND NOT (\"c\".\"relrowsecurity\"))) AS \"result\"",
+        "params": [
+          "public",
+          "LessonProgress"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "enable row-level security on \"LessonProgress\"",
+        "sql": "ALTER TABLE \"public\".\"LessonProgress\" ENABLE ROW LEVEL SECURITY"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify row-level security is enabled on \"LessonProgress\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"c\".\"relrowsecurity\")) AS \"result\"",
+        "params": [
+          "public",
+          "LessonProgress"
+        ]
+      }
+    ]
+  }
+]

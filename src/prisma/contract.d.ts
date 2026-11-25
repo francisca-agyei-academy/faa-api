@@ -23,9 +23,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'f20ec9d4399cd7923778fe03f78b71bbdee74d7248ae602074d68722e4a631fa'>;
+  StorageHashBase<'de83de302c4a83caedf5bcc34f823c385fbe8ce3fd8771d385bfc1a7a94f20e8'>;
 export type ExecutionHash =
-  ExecutionHashBase<'87af1e40aa2a934f399cc905d245839257215e5260592bcf4f751bef32dd70dd'>;
+  ExecutionHashBase<'1007e006fb47774deac2185bda992f4f51d9a41b1bc1f2cb28e3562b10ab0eff'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -393,7 +393,17 @@ export namespace Models {
     title: FieldOutputTypes['public']['Lesson']['title'];
     updatedAt: FieldOutputTypes['public']['Lesson']['updatedAt'];
     module: public_Module;
-    readonly [RelationKeys]?: 'module';
+    progress: public_LessonProgress[];
+    readonly [RelationKeys]?: 'module' | 'progress';
+  };
+  export type public_LessonProgress = {
+    completedAt: FieldOutputTypes['public']['LessonProgress']['completedAt'];
+    id: FieldOutputTypes['public']['LessonProgress']['id'];
+    lessonId: FieldOutputTypes['public']['LessonProgress']['lessonId'];
+    userId: FieldOutputTypes['public']['LessonProgress']['userId'];
+    lesson: public_Lesson;
+    user: public_User;
+    readonly [RelationKeys]?: 'lesson' | 'user';
   };
   export type public_Module = {
     accessDays: FieldOutputTypes['public']['Module']['accessDays'];
@@ -503,10 +513,11 @@ export namespace Models {
     role: FieldOutputTypes['public']['User']['role'];
     tokenVersion: FieldOutputTypes['public']['User']['tokenVersion'];
     updatedAt: FieldOutputTypes['public']['User']['updatedAt'];
+    lessonProgress: public_LessonProgress[];
     orders: public_Order[];
     purchases: public_Purchase[];
     sessions: public_Session[];
-    readonly [RelationKeys]?: 'orders' | 'purchases' | 'sessions';
+    readonly [RelationKeys]?: 'lessonProgress' | 'orders' | 'purchases' | 'sessions';
   };
 }
 
@@ -515,6 +526,7 @@ export declare const models: {
     Course: Models.public_Course;
     EmailJob: Models.public_EmailJob;
     Lesson: Models.public_Lesson;
+    LessonProgress: Models.public_LessonProgress;
     Module: Models.public_Module;
     Order: Models.public_Order;
     PaymentTransaction: Models.public_PaymentTransaction;
@@ -890,6 +902,80 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'Module';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly LessonProgress: {
+              columns: {
+                readonly completedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/char';
+                  readonly codecId: 'sql/char@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly length: 24 };
+                  readonly many: false;
+                };
+                readonly lessonId: {
+                  readonly dataType: 'pg/char';
+                  readonly codecId: 'sql/char@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly length: 24 };
+                  readonly many: false;
+                };
+                readonly userId: {
+                  readonly dataType: 'pg/char';
+                  readonly codecId: 'sql/char@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly length: 24 };
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['userId', 'lessonId'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'LessonProgress_lessonId_idx_e358970d';
+                  readonly prefix: 'LessonProgress_lessonId_idx';
+                  readonly columns: readonly ['lessonId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'LessonProgress_userId_idx_a489d58a';
+                  readonly prefix: 'LessonProgress_userId_idx';
+                  readonly columns: readonly ['userId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'LessonProgress';
+                    readonly columns: readonly ['userId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'User';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'LessonProgress';
+                    readonly columns: readonly ['lessonId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Lesson';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -1697,6 +1783,10 @@ type ContractBase = Omit<
     readonly Course: { readonly namespace: 'public' & NamespaceId; readonly model: 'Course' };
     readonly EmailJob: { readonly namespace: 'public' & NamespaceId; readonly model: 'EmailJob' };
     readonly Lesson: { readonly namespace: 'public' & NamespaceId; readonly model: 'Lesson' };
+    readonly LessonProgress: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'LessonProgress';
+    };
     readonly Module: { readonly namespace: 'public' & NamespaceId; readonly model: 'Module' };
     readonly Order: { readonly namespace: 'public' & NamespaceId; readonly model: 'Order' };
     readonly PaymentTransaction: {
@@ -2012,6 +2102,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly progress: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'LessonProgress';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['lessonId'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'Lesson';
@@ -2024,6 +2125,75 @@ type ContractBase = Omit<
                 readonly order: { readonly column: 'order' };
                 readonly title: { readonly column: 'title' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly LessonProgress: {
+            readonly fields: {
+              readonly completedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'sql/char@1';
+                  readonly typeParams: { readonly length: 24 };
+                };
+              };
+              readonly lessonId: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'sql/char@1';
+                  readonly typeParams: { readonly length: 24 };
+                };
+              };
+              readonly userId: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'sql/char@1';
+                  readonly typeParams: { readonly length: 24 };
+                };
+              };
+            };
+            readonly relations: {
+              readonly lesson: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Lesson';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['lessonId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly user: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['userId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'LessonProgress';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly completedAt: { readonly column: 'completedAt' };
+                readonly id: { readonly column: 'id' };
+                readonly lessonId: { readonly column: 'lessonId' };
+                readonly userId: { readonly column: 'userId' };
               };
             };
           };
@@ -2753,6 +2923,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly lessonProgress: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'LessonProgress';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['userId'];
+                };
+              };
               readonly orders: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -2968,6 +3149,14 @@ type ContractBase = Omit<
           readonly ref: {
             readonly entry: 'Lesson';
             readonly field: 'updatedAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'cuid2'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'LessonProgress';
+            readonly field: 'id';
             readonly namespace: 'public';
           };
         },

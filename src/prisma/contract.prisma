@@ -81,6 +81,7 @@ model User {
   sessions            Session[]
   orders              Order[]
   purchases           Purchase[]
+  lessonProgress      LessonProgress[]
 
   +Timestamps
 
@@ -190,9 +191,26 @@ model Lesson {
   title     String
   body      String  @default("")
 
+  progress  LessonProgress[]
+
   +Timestamps
 
   @@unique([moduleId, order])
+
+  @@rls
+}
+
+// A lesson a student has marked as completed.
+model LessonProgress {
+  id          Cuid2     @id @onCreate(cuid(2))
+  userId      Cuid2
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    Cuid2
+  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completedAt Timestamp
+
+  @@unique([userId, lessonId])
+  @@index([lessonId])
 
   @@rls
 }

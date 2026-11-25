@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { env } from "../config/env.js";
 import { db } from "../lib/db.js";
-import { AppError, conflict, notFound, unauthorized } from "../lib/errors.js";
+import { AppError, conflict, isUniqueViolation, notFound, unauthorized } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
 import { sendEmailInBackground } from "../lib/mailer.js";
 import { formatReceiptDate, receiptEmail } from "./email.templates.js";
@@ -355,12 +355,35 @@ async function myPurchases(userId: string) {
     .orderBy((p) => p.createdAt.desc())
     .all();
   const now = new Date();
-  const positions = await modulePositions(purchases.flatMap((p) => (p.module?.course ? [p.module.course.id] : [])));
+  const moduleIds = purchases.flatMap((p) => (p.module ? [p.module.id] : []));
+  const [positions, progress] = await Promise.all([
+    modulePositions(purchases.flatMap((p) => (p.module?.course ? [p.module.course.id] : []))),
+    lessonProgressFor(userId, moduleIds),
+  ]);
   return purchases.map((p) => ({
     ...p,
     isActive: p.expiresAt > now,
     renewPath: p.module?.course ? renewPath(p.module.course.slug, positions.get(p.module.id)) : "/courses",
+    progress: (p.module && progress.get(p.module.id)) ?? { total: 0, completed: 0 },
   }));
+}
+
+/** Per module: how many lessons it has and how many of them the student has completed. */
+async function lessonProgressFor(userId: string, moduleIds: string[]) {
+  const result = new Map<string, { total: number; completed: number }>();
+  if (!moduleIds.length) return result;
+  const [lessons, done] = await Promise.all([
+    db.orm.public.Lesson.where((l) => l.moduleId.in(moduleIds)).select("id", "moduleId").all(),
+    db.orm.public.LessonProgress.where({ userId }).select("lessonId").all(),
+  ]);
+  const completed = new Set(done.map((d) => d.lessonId));
+  for (const l of lessons) {
+    const entry = result.get(l.moduleId) ?? { total: 0, completed: 0 };
+    entry.total++;
+    if (completed.has(l.id)) entry.completed++;
+    result.set(l.moduleId, entry);
+  }
+  return result;
 }
 
 /** A module's lessons in order, bodies included: only called once access has been checked. */
@@ -371,6 +394,38 @@ const lessonsOf = (moduleId: string) =>
     .all();
 
 /** A purchased module with its lessons. Admins can open any module. */
+/**
+ * Checks the student can open the module (admins always can) and returns its access end, or null
+ * for an admin. Throws NOT_PURCHASED or ACCESS_EXPIRED with the path to buy or renew it.
+ */
+async function assertModuleAccess(userId: string, role: string, module: { id: string; course: { id: string; slug: string } | null }) {
+  if (role === "ADMIN") return null;
+  const purchase = await db.orm.public.Purchase.where({ userId, moduleId: module.id }).select("expiresAt").first();
+  if (purchase && purchase.expiresAt > new Date()) return purchase.expiresAt;
+  // Tells the page where to send the student to buy or renew this module.
+  const details = module.course
+    ? { renewPath: renewPath(module.course.slug, (await modulePositions([module.course.id])).get(module.id)) }
+    : undefined;
+  if (!purchase) throw new AppError(403, "NOT_PURCHASED", "Buy this module to open it.", details);
+  throw new AppError(
+    403,
+    "ACCESS_EXPIRED",
+    `Your access to this module ended on ${formatReceiptDate(purchase.expiresAt)}. Renew it to continue.`,
+    details,
+  );
+}
+
+const completedLessonIds = async (userId: string, lessonIds: string[]) =>
+  lessonIds.length
+    ? (
+        await db.orm.public.LessonProgress.where({ userId })
+          .where((p) => p.lessonId.in(lessonIds))
+          .select("lessonId")
+          .all()
+      ).map((p) => p.lessonId)
+    : [];
+
+/** A purchased module with its lessons and which of them the student has completed. Admins can open any module. */
 async function moduleContent(userId: string, role: string, moduleId: string) {
   const module = await db.orm.public.Module.where({ id: moduleId })
     .select("id", "title", "description", "topics", "contentUrl", "previewUrl")
@@ -378,24 +433,40 @@ async function moduleContent(userId: string, role: string, moduleId: string) {
     .first();
   if (!module) throw notFound("Module not found");
 
-  if (role !== "ADMIN") {
-    const purchase = await db.orm.public.Purchase.where({ userId, moduleId }).select("expiresAt").first();
-    if (!purchase || purchase.expiresAt <= new Date()) {
-      // Tells the page where to send the student to buy or renew this module.
-      const details = module.course
-        ? { renewPath: renewPath(module.course.slug, (await modulePositions([module.course.id])).get(module.id)) }
-        : undefined;
-      if (!purchase) throw new AppError(403, "NOT_PURCHASED", "Buy this module to open it.", details);
-      throw new AppError(
-        403,
-        "ACCESS_EXPIRED",
-        `Your access to this module ended on ${formatReceiptDate(purchase.expiresAt)}. Renew it to continue.`,
-        details,
-      );
+  const expiresAt = await assertModuleAccess(userId, role, module);
+  const lessons = await lessonsOf(moduleId);
+  return {
+    ...module,
+    lessons,
+    completedLessonIds: await completedLessonIds(userId, lessons.map((l) => l.id)),
+    expiresAt,
+  };
+}
+
+/** Marks a lesson as completed (or not). Needs the same access as reading it. */
+async function setLessonCompleted(userId: string, role: string, lessonId: string, completed: boolean) {
+  const lesson = await db.orm.public.Lesson.where({ id: lessonId })
+    .select("id", "moduleId")
+    .include("module", (m) => m.select("id").include("course", (c) => c.select("id", "slug")))
+    .first();
+  if (!lesson?.module) throw notFound("Lesson not found");
+  await assertModuleAccess(userId, role, lesson.module);
+
+  if (completed) {
+    const existing = await db.orm.public.LessonProgress.where({ userId, lessonId }).select("id").first();
+    if (!existing) {
+      try {
+        await db.orm.public.LessonProgress.create({ userId, lessonId, completedAt: new Date() });
+      } catch (err) {
+        // A double click can race two creates; the second one is a no-op.
+        if (!isUniqueViolation(err)) throw err;
+      }
     }
-    return { ...module, lessons: await lessonsOf(moduleId), expiresAt: purchase.expiresAt };
+  } else {
+    await db.orm.public.LessonProgress.where({ userId, lessonId }).delete();
   }
-  return { ...module, lessons: await lessonsOf(moduleId), expiresAt: null };
+  const ids = (await db.orm.public.Lesson.where({ moduleId: lesson.moduleId }).select("id").all()).map((l) => l.id);
+  return { completedLessonIds: await completedLessonIds(userId, ids) };
 }
 
 /**
@@ -444,4 +515,13 @@ async function recordManualOrder(adminId: string, userId: string, body: unknown)
   return order;
 }
 
-export const paymentService = { checkout, fulfil, verifyForUser, myPurchases, moduleContent, recordManualOrder, sendReceipt };
+export const paymentService = {
+  checkout,
+  fulfil,
+  verifyForUser,
+  myPurchases,
+  moduleContent,
+  setLessonCompleted,
+  recordManualOrder,
+  sendReceipt,
+};

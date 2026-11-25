@@ -22,4 +22,12 @@ router.get("/modules/:id", async (req, res) => {
   res.json({ module: await paymentService.moduleContent(req.auth!.userId, req.auth!.role, req.params.id) });
 });
 
+// Mark a lesson completed (PUT) or not (DELETE); returns the module's completed lesson ids.
+router.put("/lessons/:id/completed", async (req, res) => {
+  res.json(await paymentService.setLessonCompleted(req.auth!.userId, req.auth!.role, req.params.id, true));
+});
+router.delete("/lessons/:id/completed", async (req, res) => {
+  res.json(await paymentService.setLessonCompleted(req.auth!.userId, req.auth!.role, req.params.id, false));
+});
+
 export default router;
