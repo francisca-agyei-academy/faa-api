@@ -23,9 +23,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'5079eb1fea6769f054eb103e48b78d39eab703e25b020b973e09e75b3716b761'>;
+  StorageHashBase<'f20ec9d4399cd7923778fe03f78b71bbdee74d7248ae602074d68722e4a631fa'>;
 export type ExecutionHash =
-  ExecutionHashBase<'d020e3b143300dad4ebbb751135b6bb783f70d25778e295e0843b094cbda5dc6'>;
+  ExecutionHashBase<'87af1e40aa2a934f399cc905d245839257215e5260592bcf4f751bef32dd70dd'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -384,6 +384,17 @@ export namespace Models {
     updatedAt: FieldOutputTypes['public']['EmailJob']['updatedAt'];
     readonly [RelationKeys]?: never;
   };
+  export type public_Lesson = {
+    body: FieldOutputTypes['public']['Lesson']['body'];
+    createdAt: FieldOutputTypes['public']['Lesson']['createdAt'];
+    id: FieldOutputTypes['public']['Lesson']['id'];
+    moduleId: FieldOutputTypes['public']['Lesson']['moduleId'];
+    order: FieldOutputTypes['public']['Lesson']['order'];
+    title: FieldOutputTypes['public']['Lesson']['title'];
+    updatedAt: FieldOutputTypes['public']['Lesson']['updatedAt'];
+    module: public_Module;
+    readonly [RelationKeys]?: 'module';
+  };
   export type public_Module = {
     accessDays: FieldOutputTypes['public']['Module']['accessDays'];
     contentUrl: FieldOutputTypes['public']['Module']['contentUrl'];
@@ -400,9 +411,10 @@ export namespace Models {
     topics: FieldOutputTypes['public']['Module']['topics'];
     updatedAt: FieldOutputTypes['public']['Module']['updatedAt'];
     course: public_Course;
+    lessons: public_Lesson[];
     orders: public_Order[];
     purchases: public_Purchase[];
-    readonly [RelationKeys]?: 'course' | 'orders' | 'purchases';
+    readonly [RelationKeys]?: 'course' | 'lessons' | 'orders' | 'purchases';
   };
   export type public_Order = {
     amount: FieldOutputTypes['public']['Order']['amount'];
@@ -502,6 +514,7 @@ export declare const models: {
   public: {
     Course: Models.public_Course;
     EmailJob: Models.public_EmailJob;
+    Lesson: Models.public_Lesson;
     Module: Models.public_Module;
     Order: Models.public_Order;
     PaymentTransaction: Models.public_PaymentTransaction;
@@ -805,6 +818,82 @@ type ContractBase = Omit<
                 },
               ];
               foreignKeys: readonly [];
+            };
+            readonly Lesson: {
+              columns: {
+                readonly body: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', ''>;
+                  };
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/char';
+                  readonly codecId: 'sql/char@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly length: 24 };
+                  readonly many: false;
+                };
+                readonly moduleId: {
+                  readonly dataType: 'pg/char';
+                  readonly codecId: 'sql/char@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly length: 24 };
+                  readonly many: false;
+                };
+                readonly order: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly title: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly updatedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['moduleId', 'order'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'Lesson_moduleId_idx_04fe188b';
+                  readonly prefix: 'Lesson_moduleId_idx';
+                  readonly columns: readonly ['moduleId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Lesson';
+                    readonly columns: readonly ['moduleId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Module';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
             };
             readonly Module: {
               columns: {
@@ -1607,6 +1696,7 @@ type ContractBase = Omit<
   readonly roots: {
     readonly Course: { readonly namespace: 'public' & NamespaceId; readonly model: 'Course' };
     readonly EmailJob: { readonly namespace: 'public' & NamespaceId; readonly model: 'EmailJob' };
+    readonly Lesson: { readonly namespace: 'public' & NamespaceId; readonly model: 'Lesson' };
     readonly Module: { readonly namespace: 'public' & NamespaceId; readonly model: 'Module' };
     readonly Order: { readonly namespace: 'public' & NamespaceId; readonly model: 'Order' };
     readonly PaymentTransaction: {
@@ -1864,6 +1954,79 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly Lesson: {
+            readonly fields: {
+              readonly body: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'sql/char@1';
+                  readonly typeParams: { readonly length: 24 };
+                };
+              };
+              readonly moduleId: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'sql/char@1';
+                  readonly typeParams: { readonly length: 24 };
+                };
+              };
+              readonly order: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly title: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly module: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Module';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['moduleId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'Lesson';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly body: { readonly column: 'body' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly id: { readonly column: 'id' };
+                readonly moduleId: { readonly column: 'moduleId' };
+                readonly order: { readonly column: 'order' };
+                readonly title: { readonly column: 'title' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
           readonly Module: {
             readonly fields: {
               readonly accessDays: {
@@ -1949,6 +2112,17 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['courseId'];
                   readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly lessons: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Lesson';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['moduleId'];
                 };
               };
               readonly orders: {
@@ -2768,6 +2942,31 @@ type ContractBase = Omit<
           readonly onUpdate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
           readonly ref: {
             readonly entry: 'EmailJob';
+            readonly field: 'updatedAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'Lesson';
+            readonly field: 'createdAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'cuid2'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'Lesson';
+            readonly field: 'id';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly onUpdate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'Lesson';
             readonly field: 'updatedAt';
             readonly namespace: 'public';
           };

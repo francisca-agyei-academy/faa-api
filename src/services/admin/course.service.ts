@@ -5,6 +5,8 @@ import { deleteStoredImage, uploadCourseImage } from "../../lib/storage.js";
 import {
   courseCreateSchema,
   courseUpdateSchema,
+  lessonCreateSchema,
+  lessonUpdateSchema,
   moduleCreateSchema,
   moduleUpdateSchema,
   moveSchema,
@@ -22,7 +24,9 @@ async function list() {
 
 async function get(id: string) {
   const course = await db.orm.public.Course.where({ id })
-    .include("modules", (modules) => modules.orderBy((m) => m.order.asc()))
+    .include("modules", (modules) =>
+      modules.orderBy((m) => m.order.asc()).include("lessons", (lessons) => lessons.count()),
+    )
     .first();
   if (!course) throw notFound("Course not found");
   return course;
@@ -139,7 +143,72 @@ async function moveModule(id: string, body: unknown) {
   });
 }
 
+/* ───────── Lessons ───────── */
+
+async function listLessons(moduleId: string) {
+  const module = await db.orm.public.Module.where({ id: moduleId }).select("id", "title").first();
+  if (!module) throw notFound("Module not found");
+  const lessons = await db.orm.public.Lesson.where({ moduleId })
+    .select("id", "order", "title", "body", "updatedAt")
+    .orderBy((l) => l.order.asc())
+    .all();
+  return { module, lessons };
+}
+
+async function createLesson(moduleId: string, body: unknown, adminId: string) {
+  const input = lessonCreateSchema.parse(body);
+  const module = await db.orm.public.Module.where({ id: moduleId }).select("id").first();
+  if (!module) throw notFound("Module not found");
+  // New lessons go to the end of the module.
+  const { maxOrder } = await db.orm.public.Lesson.where({ moduleId }).aggregate((a) => ({ maxOrder: a.max("order") }));
+  const created = await db.orm.public.Lesson.select("id", "order", "title", "body", "updatedAt").create({
+    ...input,
+    moduleId,
+    order: (maxOrder ?? 0) + 1,
+  });
+  log.info({ event: "admin.lesson_created", adminId, moduleId, lessonId: created.id }, "lesson created");
+  return created;
+}
+
+async function updateLesson(id: string, body: unknown, adminId: string) {
+  const input = lessonUpdateSchema.parse(body);
+  const updated = await db.orm.public.Lesson.where({ id }).select("id", "order", "title", "body", "updatedAt").update(input);
+  if (!updated) throw notFound("Lesson not found");
+  log.info({ event: "admin.lesson_updated", adminId, lessonId: id, fields: Object.keys(input) }, "lesson updated");
+  return updated;
+}
+
+async function removeLesson(id: string, adminId: string) {
+  const deleted = await db.orm.public.Lesson.where({ id }).delete();
+  if (!deleted) throw notFound("Lesson not found");
+  log.info({ event: "admin.lesson_deleted", adminId, lessonId: id }, "lesson deleted");
+}
+
+/** Swaps a lesson with its neighbour; (moduleId, order) is unique, so it parks one at -1 first. */
+async function moveLesson(id: string, body: unknown) {
+  const { direction } = moveSchema.parse(body);
+  return db.transaction(async (tx) => {
+    const current = await tx.orm.public.Lesson.where({ id }).select("id", "moduleId", "order").first();
+    if (!current) throw notFound("Lesson not found");
+    const neighbour = await tx.orm.public.Lesson.where({ moduleId: current.moduleId })
+      .where((l) => (direction === "up" ? l.order.lt(current.order) : l.order.gt(current.order)))
+      .orderBy((l) => (direction === "up" ? l.order.desc() : l.order.asc()))
+      .select("id", "order")
+      .first();
+    if (!neighbour) return { moved: false };
+    await tx.orm.public.Lesson.where({ id: current.id }).update({ order: -1 });
+    await tx.orm.public.Lesson.where({ id: neighbour.id }).update({ order: current.order });
+    await tx.orm.public.Lesson.where({ id: current.id }).update({ order: neighbour.order });
+    return { moved: true };
+  });
+}
+
 export const adminCourseService = {
+  listLessons,
+  createLesson,
+  updateLesson,
+  removeLesson,
+  moveLesson,
   list,
   get,
   create,

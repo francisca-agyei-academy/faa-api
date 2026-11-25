@@ -10,7 +10,8 @@
     "seed:courses": "tsx src/scripts/seed-courses.ts",
     "admin:promote": "tsx src/scripts/promote-admin.ts",
     "seed:admin": "tsx src/scripts/seed-admin.ts",
-    "postinstall": "prisma skills sync || exit 0"
+    "postinstall": "prisma skills sync || exit 0",
+    "seed:lessons": "tsx src/scripts/seed-lessons.ts"
   },
   "keywords": [],
   "author": "",

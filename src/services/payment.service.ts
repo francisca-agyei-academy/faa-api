@@ -363,7 +363,14 @@ async function myPurchases(userId: string) {
   }));
 }
 
-/** A purchased module's content link. Admins can open any module. */
+/** A module's lessons in order, bodies included: only called once access has been checked. */
+const lessonsOf = (moduleId: string) =>
+  db.orm.public.Lesson.where({ moduleId })
+    .select("id", "order", "title", "body")
+    .orderBy((l) => l.order.asc())
+    .all();
+
+/** A purchased module with its lessons. Admins can open any module. */
 async function moduleContent(userId: string, role: string, moduleId: string) {
   const module = await db.orm.public.Module.where({ id: moduleId })
     .select("id", "title", "description", "topics", "contentUrl", "previewUrl")
@@ -386,9 +393,9 @@ async function moduleContent(userId: string, role: string, moduleId: string) {
         details,
       );
     }
-    return { ...module, expiresAt: purchase.expiresAt };
+    return { ...module, lessons: await lessonsOf(moduleId), expiresAt: purchase.expiresAt };
   }
-  return { ...module, expiresAt: null };
+  return { ...module, lessons: await lessonsOf(moduleId), expiresAt: null };
 }
 
 /**

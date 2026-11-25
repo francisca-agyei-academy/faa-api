@@ -170,10 +170,29 @@ model Module {
 
   purchases    Purchase[]
   orders       Order[]
+  lessons      Lesson[]
 
   +Timestamps
 
   @@unique([courseId, order])
+
+  @@rls
+}
+
+// One lesson of a module. The body is Markdown (headings, lists, tables, links) and is
+// only sent to students whose access to the module is active.
+model Lesson {
+  id        Cuid2   @id @onCreate(cuid(2))
+  moduleId  Cuid2
+  module    Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  // Position within the module, from 1
+  order     Int
+  title     String
+  body      String  @default("")
+
+  +Timestamps
+
+  @@unique([moduleId, order])
 
   @@rls
 }

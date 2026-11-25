@@ -1,0 +1,238 @@
+[
+  {
+    "id": "table.Lesson",
+    "label": "Create table \"Lesson\"",
+    "summary": "Creates table \"Lesson\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Lesson"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Lesson\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Lesson\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"Lesson\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Lesson\"",
+        "sql": "CREATE TABLE \"public\".\"Lesson\" (\n  \"body\" text DEFAULT '' NOT NULL,\n  \"createdAt\" timestamptz NOT NULL,\n  \"id\" character(24) NOT NULL,\n  \"moduleId\" character(24) NOT NULL,\n  \"order\" int4 NOT NULL,\n  \"title\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Lesson\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"public\".\"Lesson\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"Lesson\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "unique.Lesson.Lesson_moduleId_order_key",
+    "label": "Add unique constraint on \"Lesson\" (moduleId, order)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Lesson_moduleId_order_key",
+        "table": "Lesson"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Lesson_moduleId_order_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Lesson_moduleId_order_key",
+          "public",
+          "\"public\".\"Lesson\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"Lesson_moduleId_order_key\" on \"Lesson\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Lesson_moduleId_order_key\"",
+        "sql": "ALTER TABLE \"public\".\"Lesson\" ADD CONSTRAINT \"Lesson_moduleId_order_key\" UNIQUE (\"moduleId\", \"order\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"Lesson_moduleId_order_key\" exists on (moduleId, order)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "Lesson_moduleId_order_key",
+          "public",
+          "\"public\".\"Lesson\"",
+          "u",
+          "[\"moduleId\",\"order\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Lesson.Lesson_moduleId_idx_04fe188b",
+    "label": "Create index \"Lesson_moduleId_idx_04fe188b\" on \"Lesson\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Lesson_moduleId_idx_04fe188b",
+        "table": "Lesson"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Lesson_moduleId_idx_04fe188b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Lesson_moduleId_idx_04fe188b\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"Lesson_moduleId_idx_04fe188b\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Lesson_moduleId_idx_04fe188b\"",
+        "sql": "CREATE INDEX \"Lesson_moduleId_idx_04fe188b\" ON \"public\".\"Lesson\" (\"moduleId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Lesson_moduleId_idx_04fe188b\" exists on \"Lesson\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"Lesson_moduleId_idx_04fe188b\"",
+          "i",
+          "I",
+          "\"public\".\"Lesson\"",
+          "btree",
+          "[\"moduleId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Lesson.Lesson_moduleId_fkey",
+    "label": "Add foreign key \"Lesson_moduleId_fkey\" on \"Lesson\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Lesson_moduleId_fkey",
+        "table": "Lesson"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Lesson_moduleId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Lesson_moduleId_fkey",
+          "public",
+          "\"public\".\"Lesson\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"Lesson_moduleId_fkey\" on \"Lesson\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Lesson_moduleId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Lesson\"\nADD CONSTRAINT \"Lesson_moduleId_fkey\"\nFOREIGN KEY (\"moduleId\")\nREFERENCES \"public\".\"Module\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Lesson_moduleId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "Lesson_moduleId_fkey",
+          "public",
+          "\"public\".\"Lesson\"",
+          "f",
+          "[\"moduleId\"]",
+          "\"public\".\"Module\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rowLevelSecurity.public.Lesson",
+    "label": "Enable row-level security on \"Lesson\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "rowLevelSecurity",
+        "name": "Lesson"
+      }
+    },
+    "precheck": [
+      {
+        "description": "check RLS is not already enabled on \"Lesson\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND NOT (\"c\".\"relrowsecurity\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Lesson"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "enable row-level security on \"Lesson\"",
+        "sql": "ALTER TABLE \"public\".\"Lesson\" ENABLE ROW LEVEL SECURITY"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify row-level security is enabled on \"Lesson\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"c\".\"relrowsecurity\")) AS \"result\"",
+        "params": [
+          "public",
+          "Lesson"
+        ]
+      }
+    ]
+  }
+]

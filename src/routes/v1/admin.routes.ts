@@ -62,6 +62,24 @@ router.post("/modules/:id/move", async (req, res) => {
   res.json(await courses.moveModule(req.params.id, req.body));
 });
 
+// Lessons
+router.get("/modules/:id/lessons", async (req, res) => {
+  res.json(await courses.listLessons(req.params.id));
+});
+router.post("/modules/:id/lessons", async (req, res) => {
+  res.status(201).json({ lesson: await courses.createLesson(req.params.id, req.body, adminId(req)) });
+});
+router.patch("/lessons/:id", async (req, res) => {
+  res.json({ lesson: await courses.updateLesson(req.params.id, req.body, adminId(req)) });
+});
+router.delete("/lessons/:id", async (req, res) => {
+  await courses.removeLesson(req.params.id, adminId(req));
+  res.status(204).end();
+});
+router.post("/lessons/:id/move", async (req, res) => {
+  res.json(await courses.moveLesson(req.params.id, req.body));
+});
+
 // Students
 router.get("/students", async (req, res) => {
   res.json(await students.list(req.query));

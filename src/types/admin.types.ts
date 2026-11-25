@@ -66,6 +66,14 @@ export const moduleUpdateSchema = moduleCreateSchema.partial();
 
 export const moveSchema = z.object({ direction: z.enum(["up", "down"]) });
 
+/** A lesson's body is Markdown: headings, lists, tables and links. */
+export const lessonCreateSchema = z.object({
+  title: trimmed(200).min(2),
+  body: z.string().max(300_000).default(""),
+});
+
+export const lessonUpdateSchema = lessonCreateSchema.partial();
+
 const page = z.coerce.number().int().min(1).default(1);
 const pageSize = z.coerce.number().int().min(1).max(100).default(20);
 
