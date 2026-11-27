@@ -125,7 +125,7 @@ async function removeModule(id: string, adminId: string) {
 /** Swaps a module with its neighbour. (courseId, order) is unique, so it parks one at -1 first. */
 async function moveModule(id: string, body: unknown) {
   const { direction } = moveSchema.parse(body);
-  return db.transaction(async (tx) => {
+  return retryOnClash(() => db.transaction(async (tx) => {
     const current = await tx.orm.public.Module.where({ id }).select("id", "courseId", "order").first();
     if (!current) throw notFound("Module not found");
 
@@ -140,7 +140,7 @@ async function moveModule(id: string, body: unknown) {
     await tx.orm.public.Module.where({ id: neighbour.id }).update({ order: current.order });
     await tx.orm.public.Module.where({ id: current.id }).update({ order: neighbour.order });
     return { moved: true };
-  });
+  }));
 }
 
 /* ───────── Lessons ───────── */
@@ -161,11 +161,18 @@ async function createLesson(moduleId: string, body: unknown, adminId: string) {
   if (!module) throw notFound("Module not found");
   // New lessons go to the end of the module.
   const { maxOrder } = await db.orm.public.Lesson.where({ moduleId }).aggregate((a) => ({ maxOrder: a.max("order") }));
-  const created = await db.orm.public.Lesson.select("id", "order", "title", "body", "updatedAt").create({
-    ...input,
-    moduleId,
-    order: (maxOrder ?? 0) + 1,
-  });
+  let created;
+  try {
+    created = await db.orm.public.Lesson.select("id", "order", "title", "body", "updatedAt").create({
+      ...input,
+      moduleId,
+      order: (maxOrder ?? 0) + 1,
+    });
+  } catch (err) {
+    // Two lessons added at the same moment both picked the same position.
+    if (isUniqueViolation(err)) throw conflict("Another lesson was added at the same time. Please try again.");
+    throw err;
+  }
   log.info({ event: "admin.lesson_created", adminId, moduleId, lessonId: created.id }, "lesson created");
   return created;
 }
@@ -187,7 +194,7 @@ async function removeLesson(id: string, adminId: string) {
 /** Swaps a lesson with its neighbour; (moduleId, order) is unique, so it parks one at -1 first. */
 async function moveLesson(id: string, body: unknown) {
   const { direction } = moveSchema.parse(body);
-  return db.transaction(async (tx) => {
+  return retryOnClash(() => db.transaction(async (tx) => {
     const current = await tx.orm.public.Lesson.where({ id }).select("id", "moduleId", "order").first();
     if (!current) throw notFound("Lesson not found");
     const neighbour = await tx.orm.public.Lesson.where({ moduleId: current.moduleId })
@@ -200,7 +207,17 @@ async function moveLesson(id: string, body: unknown) {
     await tx.orm.public.Lesson.where({ id: neighbour.id }).update({ order: current.order });
     await tx.orm.public.Lesson.where({ id: current.id }).update({ order: neighbour.order });
     return { moved: true };
-  });
+  }));
+}
+
+/** Two reorders at the same moment can both try the parking spot (-1); that one is refused cleanly. */
+async function retryOnClash<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (err) {
+    if (isUniqueViolation(err)) throw conflict("Someone else is reordering this list. Please try again.");
+    throw err;
+  }
 }
 
 export const adminCourseService = {

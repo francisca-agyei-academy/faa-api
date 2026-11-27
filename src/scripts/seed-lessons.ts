@@ -5,8 +5,10 @@
  *   module-<n>/module.json      title, description and topics of module n (matched by its order)
  *   module-<n>/NN-name.md       one lesson per file, in file-name order; the first "# " line is the title
  *
- * By default only lessons that don't exist yet are added, so edits made in the admin panel are kept.
- * --force overwrites existing lessons with the files and removes lessons that have no file.
+ * By default, lessons are only loaded into a module that has none yet, so a module edited in the admin
+ * panel (lessons changed, reordered or deleted) is left exactly as it is.
+ * --force overwrites the module's lessons with the files: it updates them in file order, adds missing
+ * ones and removes extras (students' progress on removed lessons goes with them).
  *
  *   pnpm seed:lessons            (all courses)
  *   pnpm seed:lessons --force
@@ -34,8 +36,10 @@ for (const slug of readdirSync(root)) {
     continue;
   }
   const courseMeta = readJson<{ title?: string; description?: string }>(join(root, slug, "course.json"));
-  if (courseMeta) await db.orm.public.Course.where({ id: course.id }).update(courseMeta);
   console.log(`course: ${courseMeta?.title ?? course.title}`);
+  // Like lessons, titles and descriptions are only written when something is loaded (or with --force),
+  // so details edited in the admin panel aren't overwritten by a routine re-run.
+  let loadedAny = false;
 
   const moduleDirs = readdirSync(join(root, slug)).filter((d) => /^module-\d+$/.test(d));
   for (const dir of moduleDirs) {
@@ -46,36 +50,41 @@ for (const slug of readdirSync(root)) {
       continue;
     }
     const meta = readJson<{ title?: string; description?: string; topics?: string[] }>(join(root, slug, dir, "module.json"));
+    const files = readdirSync(join(root, slug, dir)).filter((f) => f.endsWith(".md")).sort();
+    const existing = await db.orm.public.Lesson.where({ moduleId: module.id }).select("id", "order").all();
+    if (existing.length && !force) {
+      console.log(`  module ${order}: has ${existing.length} lessons already; left as is (use --force to overwrite)`);
+      continue;
+    }
+    loadedAny = true;
     if (meta) {
       const { title, description, topics } = meta;
       await db.orm.public.Module.where({ id: module.id }).update({ title, description, topics });
     }
-
-    const files = readdirSync(join(root, slug, dir)).filter((f) => f.endsWith(".md")).sort();
-    const existing = await db.orm.public.Lesson.where({ moduleId: module.id }).select("id", "order").all();
-    const byOrder = new Map(existing.map((l) => [l.order, l.id]));
+    // Lessons in their current order; the n-th file updates the n-th lesson (orders may have gaps).
+    const sorted = [...existing].sort((a, b) => a.order - b.order);
     let added = 0;
     let updated = 0;
     for (const [index, file] of files.entries()) {
       const lesson = parseLesson(join(root, slug, dir, file));
-      const id = byOrder.get(index + 1);
-      if (!id) {
-        await db.orm.public.Lesson.create({ moduleId: module.id, order: index + 1, ...lesson });
-        added++;
-      } else if (force) {
-        await db.orm.public.Lesson.where({ id }).update(lesson);
+      const target = sorted[index];
+      if (target) {
+        await db.orm.public.Lesson.where({ id: target.id }).update(lesson);
         updated++;
+      } else {
+        const last = sorted.length ? sorted[sorted.length - 1]!.order : 0;
+        await db.orm.public.Lesson.create({ moduleId: module.id, order: last + 1 + (index - sorted.length), ...lesson });
+        added++;
       }
     }
     let removed = 0;
-    if (force) {
-      for (const l of existing.filter((l) => l.order > files.length)) {
-        await db.orm.public.Lesson.where({ id: l.id }).delete();
-        removed++;
-      }
+    for (const l of sorted.slice(files.length)) {
+      await db.orm.public.Lesson.where({ id: l.id }).delete();
+      removed++;
     }
     console.log(`  module ${order} "${meta?.title ?? module.title}": ${files.length} files, ${added} added, ${updated} updated, ${removed} removed`);
   }
+  if (courseMeta && loadedAny) await db.orm.public.Course.where({ id: course.id }).update(courseMeta);
 }
 
 await db.close();
